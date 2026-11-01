@@ -20,6 +20,7 @@ const props = defineProps({
     item: { type: Object, default: null },
     initialName: { type: String, default: '' },
     initialLocation: { type: String, default: 'pantry' },
+    initialKind: { type: String, default: 'ingredient' },
     initialStock: { type: Number, default: TWELFTHS_PER_UNIT },
     allowAnother: { type: Boolean, default: true },
     items: { type: Array, default: () => [] },
@@ -73,8 +74,8 @@ watch(open, (isOpen) => {
         return;
     }
     name.value = props.initialName;
-    kind.value = 'ingredient';
-    location.value = props.initialLocation;
+    kind.value = props.ingredientsOnly ? 'ingredient' : props.initialKind;
+    location.value = kind.value === 'household' ? 'home' : props.initialLocation;
     unit.value = 'piece';
     manual.value = false;
     lowAt.value = defaultLowAt('piece');

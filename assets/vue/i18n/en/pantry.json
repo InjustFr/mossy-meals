@@ -16,6 +16,11 @@
         "ingredient": "Ingredient",
         "household": "Household item"
     },
+    "kinds": {
+        "label": "Show",
+        "ingredient": "Ingredients",
+        "household": "Household"
+    },
     "location": {
         "label": "Place",
         "all": "All",

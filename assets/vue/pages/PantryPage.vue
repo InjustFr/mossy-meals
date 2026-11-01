@@ -13,7 +13,7 @@ import PageHeader from '../components/ui/PageHeader.vue';
 import PageSection from '../components/ui/PageSection.vue';
 import { useApi } from '../composables/useApi.js';
 import { useStockAdjustments } from '../composables/useStockAdjustments.js';
-import { LOCATION_ICONS, LOCATIONS } from '../pantry/locations.js';
+import { KIND_ICONS, KINDS, LOCATION_ICONS, LOCATIONS } from '../pantry/locations.js';
 
 const { t } = useI18n();
 const api = useApi();
@@ -22,21 +22,28 @@ const adjustments = useStockAdjustments();
 const items = ref([]);
 api.load('/api/items', items);
 
+const kind = ref('ingredient');
 const place = ref('all');
 const query = ref('');
 const itemSheet = reactive({ open: false, item: null, name: '' });
 const stockSheet = reactive({ open: false, item: null });
 
+const kindOptions = computed(() => KINDS.map((value) => ({ value, label: t(`pantry.kinds.${value}`), icon: KIND_ICONS[value] })));
 const placeOptions = computed(() => ['all', ...LOCATIONS].map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
 const rows = computed(() => items.value.map(adjustments.view));
 const runningLow = computed(() => items.value.filter((item) => item.suggested).length);
 const needle = computed(() => query.value.trim().toLowerCase());
-const matches = computed(() => rows.value.filter((row) => (needle.value ? row.name.toLowerCase().includes(needle.value) : place.value === 'all' || row.location === place.value)));
+const shown = (row) => row.kind === kind.value && (kind.value === 'household' || place.value === 'all' || row.location === place.value);
+const matches = computed(() => rows.value.filter((row) => (needle.value ? row.name.toLowerCase().includes(needle.value) : shown(row))));
 const canAdd = computed(() => needle.value !== '' && !rows.value.some((row) => row.name.toLowerCase() === needle.value));
 const inStockFirst = (list) => [...list.filter((row) => !row.out), ...list.filter((row) => row.out)];
 const groups = computed(() => {
     const places = place.value === 'all' || needle.value !== '' ? LOCATIONS : [place.value];
-    return places.map((location) => ({ location, rows: inStockFirst(matches.value.filter((row) => row.location === location)) })).filter((group) => group.rows.length > 0);
+    const ingredients = matches.value.filter((row) => row.kind === 'ingredient');
+    return [
+        ...places.map((location) => ({ key: location, title: t(`pantry.location.${location}`), rows: inStockFirst(ingredients.filter((row) => row.location === location)) })),
+        { key: 'household', title: t('pantry.kinds.household'), rows: inStockFirst(matches.value.filter((row) => row.kind === 'household')) },
+    ].filter((group) => group.rows.length > 0);
 });
 
 function addNamed() {
@@ -61,7 +68,8 @@ function setStock(row) {
         <RouterLink v-if="runningLow > 0" to="/groceries" class="pantry__low" data-test="running-low"><PhShoppingCart size="1.25rem" weight="duotone" aria-hidden="true" />{{ t('pantry.low', { count: runningLow }, runningLow) }}</RouterLink>
 
         <div class="pantry__tools">
-            <ChipGroup v-model="place" variant="segmented" :options="placeOptions" :label="t('pantry.location.label')" />
+            <ChipGroup v-model="kind" variant="segmented" :options="kindOptions" :label="t('pantry.kinds.label')" />
+            <ChipGroup v-if="kind === 'ingredient'" v-model="place" variant="segmented" :options="placeOptions" :label="t('pantry.location.label')" />
             <div class="pantry__search">
                 <PhMagnifyingGlass class="pantry__search-icon" size="1.25rem" weight="bold" aria-hidden="true" />
                 <input v-model="query" class="control pantry__field" type="search" autocomplete="off" :aria-label="t('pantry.search.label')" :placeholder="t('pantry.search.placeholder')" @keydown.enter.prevent="canAdd && addNamed()" />
@@ -72,13 +80,13 @@ function setStock(row) {
         <EmptyState v-if="rows.length === 0 && needle === ''" :icon="PhCarrot" :title="t('pantry.empty.title')" :hint="t('pantry.empty.hint')" />
         <EmptyState v-else-if="matches.length === 0 && !canAdd" :icon="PhCarrot" :title="t('pantry.noMatch.title')" :hint="t('pantry.noMatch.hint')" />
 
-        <PageSection v-for="group in groups" :key="group.location" :title="t(`pantry.location.${group.location}`)" :count="group.rows.length">
+        <PageSection v-for="group in groups" :key="group.key" :title="group.title" :count="group.rows.length">
             <ul class="pantry__list">
                 <ItemRow v-for="row in group.rows" :key="row.id" :item="row" @edit="edit(row)" @stock="setStock(row)" @move="(to) => adjustments.move(row.id, row.stock, to)" />
             </ul>
         </PageSection>
 
-        <ItemSheet v-model:open="itemSheet.open" :item="itemSheet.item" :initial-name="itemSheet.name" :initial-location="place === 'all' ? 'pantry' : place" :items="items" />
+        <ItemSheet v-model:open="itemSheet.open" :item="itemSheet.item" :initial-name="itemSheet.name" :initial-kind="kind" :initial-location="place === 'all' ? 'pantry' : place" :items="items" />
         <StockSheet v-model:open="stockSheet.open" :item="stockSheet.item" />
     </div>
 </template>

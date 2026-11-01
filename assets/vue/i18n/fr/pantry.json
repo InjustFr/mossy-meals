@@ -16,6 +16,11 @@
         "ingredient": "Ingrédient",
         "household": "Article de maison"
     },
+    "kinds": {
+        "label": "Afficher",
+        "ingredient": "Ingrédients",
+        "household": "Entretien"
+    },
     "location": {
         "label": "Endroit",
         "all": "Tout",

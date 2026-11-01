@@ -5,6 +5,7 @@ const row = (page, name) => page.getByTestId('item-row').filter({ has: page.getB
 const quantity = (page, name) => row(page, name).getByRole('button', { name: /^Set the stock of/ });
 const search = (page) => page.getByRole('searchbox', { name: 'Search or add an item' });
 const place = (page, name) => page.getByRole('group', { name: 'Place' }).getByRole('button', { name });
+const kindTab = (page, name) => page.getByRole('group', { name: 'Show' }).getByRole('button', { name });
 
 async function addItem(page, name, { location = 'Fridge', unit = null, empty = false } = {}) {
     await search(page).fill(name);
@@ -52,7 +53,9 @@ test('the running-low chip leads to the groceries', async ({ page }) => {
 
 test('household items are a kind of their own and hide what only ingredients have', async ({ page }) => {
     const ingredientOnly = ['Track by hand', 'Buy in', 'Variant of'];
-    await place(page, 'Home').click();
+    await expect(row(page, 'Toilet paper')).toHaveCount(0);
+    await kindTab(page, 'Household').click();
+    await expect(page.getByRole('group', { name: 'Place' })).toHaveCount(0);
     await expect(row(page, 'Toilet paper')).toContainText('Low');
     await expect(row(page, 'Milk')).toHaveCount(0);
 
@@ -66,15 +69,11 @@ test('household items are a kind of their own and hide what only ingredients hav
     for (const field of ['Track by hand', 'Buy in']) await expect(sheet.getByText(field, { exact: true }).first()).toBeVisible();
     await page.keyboard.press('Escape');
 
-    await place(page, 'Pantry').click();
-    await expect(row(page, 'Toilet paper')).toHaveCount(0);
-
     const name = unique('Sponges');
     await search(page).fill(name);
     await page.getByRole('button', { name: `Add “${name}”` }).click();
     sheet = page.getByRole('dialog', { name: 'New item' });
-    await expect(sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Pantry' })).toHaveAttribute('data-state', 'on');
-    await sheet.getByRole('group', { name: 'What it is' }).getByRole('button', { name: 'Household item' }).click();
+    await expect(sheet.getByRole('group', { name: 'What it is' }).getByRole('button', { name: 'Household item' })).toHaveAttribute('data-state', 'on');
     await expect(sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Home' })).toHaveAttribute('data-state', 'on');
     for (const field of ingredientOnly) await expect(sheet.getByText(field, { exact: true })).toHaveCount(0);
     await sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Pantry' }).click();
@@ -83,6 +82,10 @@ test('household items are a kind of their own and hide what only ingredients hav
 
     await search(page).fill('');
     await expect(row(page, name)).toBeVisible();
+    await kindTab(page, 'Ingredients').click();
+    await place(page, 'Pantry').click();
+    await expect(row(page, name)).toHaveCount(0);
+    await expect(row(page, 'Rice')).toBeVisible();
     const saved = await page.evaluate(async (wanted) => (await (await fetch('/api/items')).json()).find((item) => item.name === wanted), name);
     expect([saved.kind, saved.location, saved.manual, saved.variantOf]).toEqual(['household', 'pantry', true, null]);
 });
