@@ -6,8 +6,8 @@
         "build": "vite build"
     },
     "devDependencies": {
-        "@vitejs/plugin-vue": "^6.0.9",
-        "vite": "^8.3",
+        "@vitejs/plugin-vue": "^6.0.10",
+        "vite": "^8.0",
         "vite-plugin-symfony": "^8.2",
         "vitest": "^5.0.5"
     },
