@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useApi } from '../../composables/useApi.js';
 import { useToast } from '../../composables/useToast.js';
 import { intlLocale } from '../../i18n/locale.js';
-import { INGREDIENT_LOCATIONS, KIND_ICONS, KINDS, LOCATION_ICONS, LOCATIONS, UNITS } from '../../pantry/locations.js';
+import { INGREDIENT_LOCATIONS, KIND_ICONS, KINDS, LOCATION_ICONS, UNITS } from '../../pantry/locations.js';
 import { defaultLowAt, MAX_TWELFTHS, TWELFTHS_PER_UNIT } from '../../pantry/quantity.js';
 import BaseButton from '../ui/BaseButton.vue';
 import BaseSelect from '../ui/BaseSelect.vue';
@@ -53,7 +53,7 @@ const editing = computed(() => props.item !== null);
 const household = computed(() => kind.value === 'household');
 const kindOptions = computed(() => KINDS.map((value) => ({ value, label: t(`pantry.kind.${value}`), icon: KIND_ICONS[value] })));
 const capitalize = (text) => text.charAt(0).toLocaleUpperCase() + text.slice(1);
-const locationOptions = computed(() => (kind.value === 'household' || location.value === 'home' ? LOCATIONS : INGREDIENT_LOCATIONS).map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
+const locationOptions = computed(() => INGREDIENT_LOCATIONS.map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
 const unitOptions = computed(() => UNITS.map((value) => ({ value, label: capitalize(t(`units.${value}.one`)) })));
 const lowAtStep = computed(() => defaultLowAt(unit.value));
 const monthOptions = computed(() => {
@@ -75,7 +75,7 @@ watch(open, (isOpen) => {
     }
     name.value = props.initialName;
     kind.value = props.ingredientsOnly ? 'ingredient' : props.initialKind;
-    location.value = kind.value === 'household' ? 'home' : props.initialLocation;
+    location.value = props.initialLocation;
     unit.value = 'piece';
     manual.value = false;
     lowAt.value = defaultLowAt('piece');
@@ -91,8 +91,7 @@ function resetStock() {
 }
 
 function changeKind(next) {
-    if (!editing.value) location.value = next === 'household' ? 'home' : props.initialLocation;
-    else if (next === 'ingredient' && location.value === 'home') location.value = 'pantry';
+    if (next === 'ingredient' && location.value === 'home') location.value = 'pantry';
     kind.value = next;
 }
 
@@ -111,7 +110,7 @@ function focusName(event) {
 async function save(another) {
     saving.value = true;
     nameError.value = null;
-    const body = { name: name.value, kind: kind.value, location: location.value, unit: unit.value, manual: manual.value || household.value, lowAt: lowAt.value, alert: alert.value, months: household.value ? ALL_MONTHS : months.value, variantOf: household.value ? null : variantOf.value, ...(editing.value ? {} : { stock: whole.value + fraction.value }) };
+    const body = { name: name.value, kind: kind.value, location: household.value ? 'home' : location.value, unit: unit.value, manual: manual.value || household.value, lowAt: lowAt.value, alert: alert.value, months: household.value ? ALL_MONTHS : months.value, variantOf: household.value ? null : variantOf.value, ...(editing.value ? {} : { stock: whole.value + fraction.value }) };
     try {
         if (editing.value) {
             emit('saved', await api.put(`/api/items/${props.item.id}`, body));
@@ -155,7 +154,7 @@ async function remove() {
             <FormField v-if="!ingredientsOnly" :label="t('pantry.sheet.kind')" as="div">
                 <ChipGroup :model-value="kind" :options="kindOptions" :label="t('pantry.sheet.kind')" data-test="kind" @update:model-value="changeKind" />
             </FormField>
-            <FormField :label="t('pantry.sheet.location')" as="div">
+            <FormField v-if="!household" :label="t('pantry.sheet.location')" as="div">
                 <ChipGroup v-model="location" :options="locationOptions" :label="t('pantry.sheet.location')" />
             </FormField>
             <FormField :label="t('pantry.sheet.unit')">

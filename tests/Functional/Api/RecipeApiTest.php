@@ -310,10 +310,11 @@ final class RecipeApiTest extends WebTestCase
         self::assertSame(['ingredient', 'household'], array_column(self::body($client), 'kind'));
     }
 
-    public function testAnIngredientKeptAtHomeIsStillAnIngredient(): void
+    public function testAnIngredientSentAtHomeGoesToThePantry(): void
     {
         $client = self::signedInClient();
         $client->jsonRequest('POST', '/api/items', ['name' => 'Mint', 'location' => 'home', 'unit' => 'piece', 'stock' => 12]);
+        self::assertSame(['ingredient', 'pantry'], [self::body($client)['kind'], self::body($client)['location']]);
         $mint = Json::string(self::body($client), 'id');
 
         $client->jsonRequest('POST', '/api/recipes', ['name' => 'Mint tea', 'lines' => [['ingredientId' => $mint, 'amount' => 12]]]);

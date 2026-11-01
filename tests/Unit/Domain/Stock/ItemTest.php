@@ -235,13 +235,18 @@ final class ItemTest extends TestCase
         self::assertTrue($rice->isManual());
     }
 
-    public function testTheKindDoesNotDependOnThePlace(): void
+    public function testAHouseholdItemLivesAtHomeAndAnIngredientNever(): void
     {
         $mint = Item::add('Mint', Kind::Ingredient, Location::Home, Unit::Piece, false, null, new \DateTimeImmutable());
-        $sponges = Item::add('Sponges', Kind::Household, Location::Pantry, Unit::Pack, false, null, new \DateTimeImmutable());
+        $sponges = Item::add('Sponges', Kind::Household, Location::Fridge, Unit::Pack, false, null, new \DateTimeImmutable());
 
-        self::assertSame([Kind::Ingredient, false, false], [$mint->kind(), $mint->isHousehold(), $mint->isManual()]);
-        self::assertSame([Kind::Household, true, true, Location::Pantry], [$sponges->kind(), $sponges->isHousehold(), $sponges->isManual(), $sponges->location()]);
+        self::assertSame([Kind::Ingredient, false, false, Location::Pantry], [$mint->kind(), $mint->isHousehold(), $mint->isManual(), $mint->location()]);
+        self::assertSame([Kind::Household, true, true, Location::Home], [$sponges->kind(), $sponges->isHousehold(), $sponges->isManual(), $sponges->location()]);
+
+        $sponges->describe('Sponges', Kind::Ingredient, Location::Home, Unit::Pack, false, null);
+        $mint->describe('Mint', Kind::Ingredient, Location::Fridge, Unit::Piece, false, null);
+
+        self::assertSame([Location::Pantry, Location::Fridge], [$sponges->location(), $mint->location()]);
     }
 
     public function testAHouseholdItemHasNoVariants(): void

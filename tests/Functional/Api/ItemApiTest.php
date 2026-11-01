@@ -152,7 +152,7 @@ final class ItemApiTest extends WebTestCase
         $id = Json::string($created, 'id');
 
         $client->jsonRequest('PUT', "/api/items/$id", ['name' => 'Sponges', 'kind' => 'household', 'location' => 'pantry', 'unit' => 'pack']);
-        self::assertSame(['household', 'pantry'], [Json::string(self::body($client), 'kind'), Json::string(self::body($client), 'location')]);
+        self::assertSame(['household', 'home'], [Json::string(self::body($client), 'kind'), Json::string(self::body($client), 'location')]);
 
         $client->jsonRequest('GET', '/api/items');
         self::assertSame(['household'], array_column(self::body($client), 'kind'));

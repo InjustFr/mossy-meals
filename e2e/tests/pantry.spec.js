@@ -65,6 +65,7 @@ test('household items are a kind of their own and hide what only ingredients hav
     await expect(kind.getByRole('button', { name: 'Household item' })).toHaveAttribute('data-state', 'on');
     await expect(sheet.getByRole('switch', { name: 'Stock alert' })).toBeVisible();
     for (const field of ingredientOnly) await expect(sheet.getByText(field, { exact: true })).toHaveCount(0);
+    await expect(sheet.getByRole('group', { name: 'Where it lives' })).toHaveCount(0);
     await kind.getByRole('button', { name: 'Ingredient' }).click();
     await expect(sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Pantry' })).toHaveAttribute('data-state', 'on');
     await expect(sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Home' })).toHaveCount(0);
@@ -76,9 +77,8 @@ test('household items are a kind of their own and hide what only ingredients hav
     await page.getByRole('button', { name: `Add “${name}”` }).click();
     sheet = page.getByRole('dialog', { name: 'New item' });
     await expect(sheet.getByRole('group', { name: 'What it is' }).getByRole('button', { name: 'Household item' })).toHaveAttribute('data-state', 'on');
-    await expect(sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Home' })).toHaveAttribute('data-state', 'on');
+    await expect(sheet.getByRole('group', { name: 'Where it lives' })).toHaveCount(0);
     for (const field of ingredientOnly) await expect(sheet.getByText(field, { exact: true })).toHaveCount(0);
-    await sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Pantry' }).click();
     await sheet.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(sheet).toBeHidden();
 
@@ -90,7 +90,7 @@ test('household items are a kind of their own and hide what only ingredients hav
     await expect(row(page, name)).toHaveCount(0);
     await expect(row(page, 'Rice')).toBeVisible();
     const saved = await page.evaluate(async (wanted) => (await (await fetch('/api/items')).json()).find((item) => item.name === wanted), name);
-    expect([saved.kind, saved.location, saved.manual, saved.variantOf]).toEqual(['household', 'pantry', true, null]);
+    expect([saved.kind, saved.location, saved.manual, saved.variantOf]).toEqual(['household', 'home', true, null]);
 });
 
 test('an ingredient without a stock alert is never running low', async ({ page }) => {

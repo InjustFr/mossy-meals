@@ -13,7 +13,7 @@ import PageHeader from '../components/ui/PageHeader.vue';
 import PageSection from '../components/ui/PageSection.vue';
 import { useApi } from '../composables/useApi.js';
 import { useStockAdjustments } from '../composables/useStockAdjustments.js';
-import { INGREDIENT_LOCATIONS, KIND_ICONS, KINDS, LOCATION_ICONS, LOCATIONS } from '../pantry/locations.js';
+import { INGREDIENT_LOCATIONS, KIND_ICONS, KINDS, LOCATION_ICONS } from '../pantry/locations.js';
 
 const { t } = useI18n();
 const api = useApi();
@@ -38,7 +38,7 @@ const matches = computed(() => rows.value.filter((row) => (needle.value ? row.na
 const canAdd = computed(() => needle.value !== '' && !rows.value.some((row) => row.name.toLowerCase() === needle.value));
 const inStockFirst = (list) => [...list.filter((row) => !row.out), ...list.filter((row) => row.out)];
 const groups = computed(() => {
-    const places = place.value === 'all' || needle.value !== '' ? LOCATIONS : [place.value];
+    const places = place.value === 'all' || needle.value !== '' ? INGREDIENT_LOCATIONS : [place.value];
     const ingredients = matches.value.filter((row) => row.kind === 'ingredient');
     return [
         ...places.map((location) => ({ key: location, title: t(`pantry.location.${location}`), rows: inStockFirst(ingredients.filter((row) => row.location === location)) })),

@@ -69,7 +69,7 @@ class Item
         $this->id = new Ulid();
         $this->name = self::validName($name);
         $this->kind = $kind;
-        $this->location = $location;
+        $this->location = self::placeOf($kind, $location);
         $this->unit = $unit;
         $this->manual = $manual || Kind::Household === $kind;
         $this->stock = Quantity::zero();
@@ -88,7 +88,7 @@ class Item
     {
         $this->name = self::validName($name);
         $this->kind = $kind;
-        $this->location = $location;
+        $this->location = self::placeOf($kind, $location);
         $this->unit = $unit;
         $this->manual = $manual || Kind::Household === $kind;
         $this->lowAt = $lowAt ?? $unit->defaultLowAt();
@@ -234,6 +234,15 @@ class Item
     public function createdAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    private static function placeOf(Kind $kind, Location $location): Location
+    {
+        return match (true) {
+            Kind::Household === $kind => Location::Home,
+            Location::Home === $location => Location::Pantry,
+            default => $location,
+        };
     }
 
     private static function validName(string $name): string
