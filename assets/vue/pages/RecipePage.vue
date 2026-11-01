@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
-import { PhArrowLeft, PhBookOpenText, PhCheckCircle, PhFlask, PhPencilSimple, PhWarning } from '@phosphor-icons/vue';
+import { PhArrowLeft, PhBookOpenText, PhCheckCircle, PhCircleDashed, PhFlask, PhPencilSimple, PhWarning } from '@phosphor-icons/vue';
 import { useI18n } from 'vue-i18n';
 import MealSheet from '../components/cooking/MealSheet.vue';
 import PrepSheet from '../components/cooking/PrepSheet.vue';
@@ -30,7 +30,9 @@ const recipe = computed(() => recipes.value.find((candidate) => candidate.id ===
 const short = computed(() => (recipe.value ? lacking(recipe.value).map((line) => line.name).join(', ') : ''));
 const prepFirst = computed(() => (recipe.value && recipe.value.missing.length === 0 ? recipe.value.preps : []));
 const prep = computed(() => recipes.value.find((candidate) => candidate.id === prepSheet.recipeId) ?? null);
-const waiting = (line) => !line.covered && !recipe.value.missing.includes(line.ingredientId);
+const lacks = (line) => recipe.value.missing.includes(line.ingredientId);
+const waiting = (line) => !line.covered && !line.optional && !lacks(line);
+const mark = (line) => (line.covered ? PhCheckCircle : waiting(line) ? PhFlask : lacks(line) ? PhWarning : PhCircleDashed);
 
 function make(recipeId) {
     Object.assign(prepSheet, { open: true, recipeId });
@@ -57,9 +59,9 @@ const have = (line) => formatQuantity(line.stock, currentLanguage());
 
             <PageSection :title="t('recipes.page.ingredients')" :count="recipe.lines.length">
                 <ul class="recipe__lines">
-                    <li v-for="line in recipe.lines" :key="line.ingredientId" :class="['recipe__line', { 'recipe__line--waiting': waiting(line), 'recipe__line--missing': !line.covered && !waiting(line) }]" data-test="recipe-line">
-                        <component :is="line.covered ? PhCheckCircle : waiting(line) ? PhFlask : PhWarning" class="recipe__mark" size="1.5rem" weight="duotone" aria-hidden="true" />
-                        <span class="recipe__name">{{ line.name }}<span v-if="line.manual" class="recipe__hand">{{ t('recipes.page.byHand') }}</span><span v-if="line.variant" class="recipe__hand" data-test="variant">{{ t('recipes.page.variant', { name: line.variant.name }) }}</span></span>
+                    <li v-for="line in recipe.lines" :key="line.ingredientId" :class="['recipe__line', { 'recipe__line--waiting': waiting(line), 'recipe__line--missing': lacks(line) }]" data-test="recipe-line">
+                        <component :is="mark(line)" class="recipe__mark" size="1.5rem" weight="duotone" aria-hidden="true" />
+                        <span class="recipe__name">{{ line.name }}<span v-if="line.optional" class="recipe__hand" data-test="optional">{{ t('recipes.page.optional') }}</span><span v-if="line.manual" class="recipe__hand">{{ t('recipes.page.byHand') }}</span><span v-if="line.variant" class="recipe__hand" data-test="variant">{{ t('recipes.page.variant', { name: line.variant.name }) }}</span></span>
                         <span class="recipe__amounts tabular">
                             <span class="visually-hidden">{{ t('recipes.page.have') }}: </span><span data-test="have">{{ have(line) }}</span>
                             <span aria-hidden="true"> / </span>

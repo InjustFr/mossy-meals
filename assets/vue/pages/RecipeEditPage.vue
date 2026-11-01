@@ -113,7 +113,7 @@ async function remove() {
                     <ul v-else class="edit__lines">
                         <RecipeLineEditor v-for="(line, index) in form.lines" :key="line.ingredientId" v-model="form.lines[index]" @remove="form.lines.splice(index, 1)" />
                     </ul>
-                    <IngredientPicker :exclude="used" @pick="addLine" />
+                    <IngredientPicker :exclude="used" food @pick="addLine" />
                 </section>
 
                 <section v-if="form.kind === 'prep'" class="edit__section" :aria-label="t('recipes.edit.output')">
@@ -123,7 +123,7 @@ async function remove() {
                         <span class="edit__chosen-name">{{ form.output.name }}</span>
                         <button type="button" class="edit__clear" :aria-label="t('recipes.edit.clearOutput', { name: form.output.name })" @click="form.output = null"><PhX size="1.125rem" weight="bold" aria-hidden="true" /></button>
                     </div>
-                    <IngredientPicker v-else :label="t('recipes.edit.pickOutput')" @pick="chooseOutput" />
+                    <IngredientPicker v-else :label="t('recipes.edit.pickOutput')" food @pick="chooseOutput" />
                     <FormField :label="t('recipes.edit.yield')" as="div">
                         <QuantityStepper v-model="form.whole" :label="t('recipes.edit.yield')" :decrease-label="t('recipes.edit.yieldLess')" :increase-label="t('recipes.edit.yieldMore')" :step="TWELFTHS_PER_UNIT" :max="MAX_TWELFTHS - TWELFTHS_PER_UNIT" />
                         <FractionChips v-model="form.fraction" :label="t('recipes.edit.yieldFraction')" />

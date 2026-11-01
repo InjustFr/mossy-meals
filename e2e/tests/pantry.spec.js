@@ -43,6 +43,38 @@ test('the demo kitchen is listed by place with the empty and low ones flagged', 
     await expect(row(page, 'Milk')).toHaveCount(0);
 });
 
+test('the running-low chip leads to the groceries', async ({ page }) => {
+    await expect(page.getByTestId('running-low')).toContainText('running low');
+    await page.getByTestId('running-low').click();
+
+    await expect(page).toHaveURL(/\/groceries$/);
+});
+
+test('household supplies live at home, apart from the ingredients', async ({ page }) => {
+    await place(page, 'Home').click();
+    await expect(row(page, 'Toilet paper')).toContainText('Low');
+    await expect(row(page, 'Milk')).toHaveCount(0);
+
+    await place(page, 'Pantry').click();
+    await expect(row(page, 'Toilet paper')).toHaveCount(0);
+});
+
+test('an ingredient without a stock alert is never running low', async ({ page }) => {
+    const name = unique('Pesto');
+    await search(page).fill(name);
+    await page.getByRole('button', { name: `Add “${name}”` }).click();
+    const sheet = page.getByRole('dialog', { name: 'New ingredient' });
+    await sheet.getByRole('button', { name: 'Less in stock' }).click();
+    await sheet.getByRole('switch', { name: 'Stock alert' }).click();
+    await expect(sheet.getByRole('group', { name: 'Running low at' })).toHaveCount(0);
+    await sheet.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(sheet).toBeHidden();
+    await search(page).fill(name);
+
+    await expect(row(page, name)).toContainText('Out');
+    await expect(row(page, name)).not.toContainText('Low');
+});
+
 test('rows that are out sit dimmed at the bottom of their place', async ({ page }) => {
     await place(page, 'Fridge').click();
     const outs = await page.getByTestId('ingredient-row').evaluateAll((rows) => rows.map((element) => element.classList.contains('row--out')));

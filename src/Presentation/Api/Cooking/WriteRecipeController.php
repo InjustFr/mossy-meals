@@ -20,7 +20,7 @@ final class WriteRecipeController extends AbstractController
     {
         return $this->json($writeRecipe(new WriteRecipe(
             $payload->name,
-            array_map(static fn (RecipeLinePayload $line): RecipeLineInput => new RecipeLineInput($line->ingredientId, $line->amount), $payload->lines),
+            array_map(static fn (RecipeLinePayload $line): RecipeLineInput => new RecipeLineInput($line->ingredientId, $line->amount, $line->optional), $payload->lines),
             $payload->output?->ingredientId,
             $payload->output?->yield,
         )), Response::HTTP_CREATED);

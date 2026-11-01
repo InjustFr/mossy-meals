@@ -30,27 +30,35 @@ class RecipeLine
     #[ORM\Column(nullable: true)]
     private ?int $amountTwelfths;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $optional;
+
     #[ORM\Column]
     private int $position;
 
-    public function __construct(Recipe $recipe, Ingredient $ingredient, ?Quantity $amount, int $position)
+    public function __construct(Recipe $recipe, Need $need, int $position)
     {
         $this->id = new Ulid();
         $this->recipe = $recipe;
-        $this->ingredient = $ingredient;
-        $this->amountTwelfths = $amount?->twelfths();
-        $this->position = $position;
+        $this->ingredient = $need->ingredient;
+        $this->measure($need, $position);
     }
 
-    public function measure(?Quantity $amount, int $position): void
+    public function measure(Need $need, int $position): void
     {
-        $this->amountTwelfths = $amount?->twelfths();
+        $this->amountTwelfths = $need->amount?->twelfths();
+        $this->optional = $need->optional;
         $this->position = $position;
     }
 
     public function ingredient(): Ingredient
     {
         return $this->ingredient;
+    }
+
+    public function isOptional(): bool
+    {
+        return $this->optional;
     }
 
     public function position(): int

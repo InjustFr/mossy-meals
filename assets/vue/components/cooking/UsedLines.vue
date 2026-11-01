@@ -49,7 +49,7 @@ const preview = (line) => `${formatQuantity(line.stock, currentLanguage())} → 
                 </div>
             </li>
         </ul>
-        <IngredientPicker :exclude="used" @pick="(ingredient) => (lines = withIngredient(lines, ingredient))" />
+        <IngredientPicker :exclude="used" food @pick="(ingredient) => (lines = withIngredient(lines, ingredient))" />
     </div>
 </template>
 

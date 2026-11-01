@@ -73,6 +73,7 @@ final class DemoStory extends Story
             ['Salt', Location::Pantry, Unit::Box, self::UNIT, true],
             ['Spices', Location::Pantry, Unit::Jar, 6, true],
             ['Water', Location::Pantry, Unit::Bottle, 2 * self::UNIT, true],
+            ['Toilet paper', Location::Household, Unit::Pack, 3, false],
         ];
     }
 

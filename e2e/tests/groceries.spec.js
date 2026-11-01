@@ -81,8 +81,9 @@ test('the groceries open from the pantry and close without losing the choices', 
     await expect(row(page, 'Rice')).toHaveAttribute('aria-checked', 'false');
 });
 
-test('the Cook page counts the suggested ingredients', async ({ page }) => {
+test('the Pantry page counts the suggested ingredients', async ({ page }) => {
     const suggested = (await api(page, 'GET', '/api/ingredients')).filter((item) => item.suggested).length;
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Pantry' }).click();
 
     await expect(page.getByTestId('running-low')).toHaveText(`${suggested} running low`);
 });

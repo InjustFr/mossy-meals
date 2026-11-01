@@ -28,6 +28,7 @@ function takePreloaded(url) {
         const element = document.getElementById('app-preload');
         preloaded = new Map(element ? Object.entries(JSON.parse(element.textContent)) : []);
         element?.remove();
+        setTimeout(() => preloaded.clear());
     }
     if (!preloaded.has(url)) return { found: false };
     const data = preloaded.get(url);

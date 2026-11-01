@@ -9,6 +9,7 @@ final readonly class RecipeLineInput
     public function __construct(
         public string $ingredientId,
         public ?int $amount,
+        public bool $optional = false,
     ) {
     }
 }

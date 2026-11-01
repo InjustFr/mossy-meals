@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { MAX_TWELFTHS, TWELFTHS_PER_UNIT } from '../../pantry/quantity.js';
 import FractionChips from '../pantry/FractionChips.vue';
 import QuantityStepper from '../pantry/QuantityStepper.vue';
+import BaseSwitch from '../ui/BaseSwitch.vue';
 import ChipGroup from '../ui/ChipGroup.vue';
 import IconButton from '../ui/IconButton.vue';
 
@@ -25,6 +26,10 @@ const whole = computed({
     get: () => line.value.whole,
     set: (value) => { line.value = { ...line.value, whole: value }; },
 });
+const optional = computed({
+    get: () => line.value.optional,
+    set: (value) => { line.value = { ...line.value, optional: value }; },
+});
 const fraction = computed({
     get: () => line.value.fraction,
     set: (value) => { line.value = { ...line.value, fraction: value }; },
@@ -42,6 +47,10 @@ const fraction = computed({
             <QuantityStepper v-model="whole" :label="t('recipes.edit.whole', { name: line.name })" :decrease-label="t('recipes.edit.less', { name: line.name })" :increase-label="t('recipes.edit.more', { name: line.name })" :step="TWELFTHS_PER_UNIT" :max="MAX_TWELFTHS - TWELFTHS_PER_UNIT" />
             <FractionChips v-model="fraction" :label="t('recipes.edit.fraction', { name: line.name })" />
         </div>
+        <label class="editor__optional">
+            <BaseSwitch v-model="optional" :label="t('recipes.edit.optionalOf', { name: line.name })" data-test="line-optional" />
+            <span>{{ t('recipes.edit.optional') }}</span>
+        </label>
     </li>
 </template>
 
@@ -50,4 +59,5 @@ const fraction = computed({
 .editor__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .editor__name { min-width: 0; color: var(--color-ink); font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; overflow-wrap: anywhere; }
 .editor__amount { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.editor__optional { display: flex; align-items: center; gap: var(--space-3); color: var(--color-muted); font-weight: 700; }
 </style>

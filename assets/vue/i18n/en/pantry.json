@@ -17,7 +17,8 @@
         "all": "All",
         "fridge": "Fridge",
         "freezer": "Freezer",
-        "pantry": "Pantry"
+        "pantry": "Pantry",
+        "household": "Home"
     },
     "badge": {
         "out": "Out",
@@ -59,6 +60,8 @@
         "stockFraction": "And a bit more",
         "manual": "Track by hand",
         "manualHint": "Cooking won't deduct it.",
+        "alert": "Stock alert",
+        "alertHint": "Off for what you never keep in stock, like a sauce made fresh: it never shows as running low and is never suggested.",
         "lowAt": "Running low at",
         "more": "More",
         "less": "Less",
@@ -76,5 +79,6 @@
         "variantOfHint": "A variant can stand in for its main ingredient in every recipe (frozen zucchini for zucchini).",
         "noVariant": "None, it is its own ingredient"
     },
-    "groceries": "Go shopping"
+    "groceries": "Go shopping",
+    "low": "{count} running low"
 }

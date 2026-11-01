@@ -17,7 +17,8 @@
         "all": "Tout",
         "fridge": "Frigo",
         "freezer": "Congélo",
-        "pantry": "Placard"
+        "pantry": "Placard",
+        "household": "Maison"
     },
     "badge": {
         "out": "Fini",
@@ -59,6 +60,8 @@
         "stockFraction": "Et un peu plus",
         "manual": "Suivi à la main",
         "manualHint": "La cuisine ne le décompte pas.",
+        "alert": "Alerte de stock",
+        "alertHint": "À couper pour ce qui ne se garde pas, comme une sauce faite minute : jamais signalé ni suggéré.",
         "lowAt": "Bientôt fini à",
         "more": "Plus",
         "less": "Moins",
@@ -76,5 +79,6 @@
         "variantOfHint": "Une variante peut remplacer son ingrédient principal dans toutes les recettes (courgettes surgelées pour courgettes).",
         "noVariant": "Aucun, c’est un ingrédient à part"
     },
-    "groceries": "Faire les courses"
+    "groceries": "Faire les courses",
+    "low": "{count} ingrédient bientôt fini | {count} ingrédients bientôt finis"
 }

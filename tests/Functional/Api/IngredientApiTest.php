@@ -122,6 +122,27 @@ final class IngredientApiTest extends WebTestCase
         self::assertResponseStatusCodeSame(204);
     }
 
+    public function testWithoutAStockAlertAnIngredientIsNeverLowNorSuggested(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/ingredients', ['name' => 'Pesto', 'location' => 'fridge', 'unit' => 'jar', 'alert' => false]);
+        self::assertResponseStatusCodeSame(201);
+        $pesto = self::body($client);
+        self::assertSame([false, false, false, true], [$pesto['alert'], $pesto['runningLow'], $pesto['suggested'], $pesto['out']]);
+
+        $client->jsonRequest('PUT', '/api/ingredients/'.Json::string($pesto, 'id'), ['name' => 'Pesto', 'location' => 'fridge', 'unit' => 'jar']);
+        self::assertSame([true, true, true], [self::body($client)['alert'], self::body($client)['runningLow'], self::body($client)['suggested']]);
+    }
+
+    public function testHouseholdSuppliesAreKeptLikeIngredients(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/ingredients', ['name' => 'Toilet paper', 'location' => 'household', 'unit' => 'pack']);
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame(['household', true], [self::body($client)['location'], self::body($client)['suggested']]);
+    }
+
     public function testDeletingAMainIngredientFreesItsVariants(): void
     {
         $client = self::signedInClient();

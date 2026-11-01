@@ -1,7 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
-import { RouterLink } from 'vue-router';
-import { PhCookingPot, PhPlus, PhShoppingCart } from '@phosphor-icons/vue';
+import { PhCookingPot, PhPlus } from '@phosphor-icons/vue';
 import { useI18n } from 'vue-i18n';
 import MealSheet from '../components/cooking/MealSheet.vue';
 import PrepSheet from '../components/cooking/PrepSheet.vue';
@@ -17,9 +16,7 @@ const { t } = useI18n();
 const api = useApi();
 
 const recipes = ref([]);
-const ingredients = ref([]);
 api.load('/api/recipes', recipes);
-api.load('/api/ingredients', ingredients);
 
 const mealSheet = reactive({ open: false, heading: null, submitLabel: null, title: '', lines: [] });
 const prepSheet = reactive({ open: false, recipeId: null });
@@ -27,7 +24,6 @@ const prepSheet = reactive({ open: false, recipeId: null });
 const meals = computed(() => recipes.value.filter((recipe) => recipe.makes === 'meal' && recipe.makeable));
 const preps = computed(() => recipes.value.filter((recipe) => recipe.makes === 'prep' && recipe.makeable));
 const later = computed(() => recipes.value.filter((recipe) => !recipe.makeable && recipe.missing.length === 0));
-const runningLow = computed(() => ingredients.value.filter((ingredient) => ingredient.suggested).length);
 const prep = computed(() => recipes.value.find((recipe) => recipe.id === prepSheet.recipeId) ?? null);
 
 function logMeal() {
@@ -48,8 +44,6 @@ function make(recipe) {
         <PageHeader :title="t('nav.cook')">
             <BaseButton data-test="log-meal" @click="logMeal"><PhPlus size="1.125rem" weight="bold" aria-hidden="true" />{{ t('cook.logMeal') }}</BaseButton>
         </PageHeader>
-
-        <RouterLink v-if="runningLow > 0" to="/groceries" class="cook__low" data-test="running-low"><PhShoppingCart size="1.25rem" weight="duotone" aria-hidden="true" />{{ t('cook.low', { count: runningLow }, runningLow) }}</RouterLink>
 
         <EmptyState v-if="recipes.length === 0" :icon="PhCookingPot" :title="t('cook.empty.title')" :hint="t('cook.empty.hint')">
             <BaseButton to="/recipes/new">{{ t('cook.empty.action') }}</BaseButton>
@@ -82,7 +76,5 @@ function make(recipe) {
 </template>
 
 <style scoped>
-.cook__low { display: inline-flex; align-self: flex-start; align-items: center; gap: var(--space-2); min-height: var(--target); padding: 0 var(--space-4); border: 0.125rem solid var(--color-highlight); border-radius: var(--radius-pill); background: var(--color-highlight-soft); color: var(--color-ink); font-weight: 800; text-decoration: none; }
-.cook__low:hover { background: var(--color-highlight); }
 .cook__list { display: flex; flex-direction: column; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
 </style>

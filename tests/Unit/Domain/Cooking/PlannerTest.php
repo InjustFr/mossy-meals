@@ -189,8 +189,46 @@ final class PlannerTest extends TestCase
         self::assertSame($homemade, $plan->uses($pasta->lines()[0]));
     }
 
+    public function testAnOptionalLineThatIsOutNeitherBlocksNorWaitsForAPrep(): void
+    {
+        $toppings = self::ingredient('Toppings', 0);
+        $peppers = self::ingredient('Peppers', 12);
+        $pizza = self::meal('Pizza', [[self::ingredient('Dough', 12), 12], [self::ingredient('Tomato sauce', 12), 6], [$toppings, 12, true]]);
+
+        $plan = (new Planner([self::prep('Toppings', [[$peppers, 12]], $toppings, 12)]))->plan($pizza);
+
+        self::assertSame([], $plan->missing);
+        self::assertSame([], $plan->preps);
+        self::assertSame([true, true, false], array_map($plan->covers(...), $pizza->lines()));
+        self::assertTrue($plan->isMakeable());
+    }
+
+    public function testAnOptionalLineInStockIsTakenFromTheSameStock(): void
+    {
+        $cheese = self::ingredient('Cheese', 12);
+        $dough = self::ingredient('Dough', 0);
+        $prep = self::prep('Dough', [[$cheese, 12]], $dough, 12);
+        $pizza = self::meal('Pizza', [[$cheese, 12, true], [$dough, 12]]);
+
+        $plan = (new Planner([$prep]))->plan($pizza);
+
+        self::assertSame($cheese, $plan->uses($pizza->lines()[0]));
+        self::assertSame(['Dough'], self::names($plan->missing));
+    }
+
+    public function testAnOptionalLineOfAPrepDoesNotStopIt(): void
+    {
+        $dough = self::ingredient('Dough', 0);
+        $prep = self::prep('Dough', [[self::ingredient('Flour', 12), 6], [self::ingredient('Herbs', 0), null, true]], $dough, 12);
+
+        $plan = (new Planner([$prep]))->plan(self::meal('Tart', [[$dough, 12]]));
+
+        self::assertSame([], $plan->missing);
+        self::assertSame([$prep], $plan->preps);
+    }
+
     /**
-     * @param list<array{Ingredient, ?int}> $lines
+     * @param list<array{0: Ingredient, 1: ?int, 2?: bool}> $lines
      */
     private static function meal(string $name, array $lines): Recipe
     {
@@ -198,7 +236,7 @@ final class PlannerTest extends TestCase
     }
 
     /**
-     * @param list<array{Ingredient, ?int}> $lines
+     * @param list<array{0: Ingredient, 1: ?int, 2?: bool}> $lines
      */
     private static function prep(string $name, array $lines, Ingredient $output, int $yield): Recipe
     {
@@ -206,13 +244,13 @@ final class PlannerTest extends TestCase
     }
 
     /**
-     * @param list<array{Ingredient, ?int}> $lines
+     * @param list<array{0: Ingredient, 1: ?int, 2?: bool}> $lines
      *
      * @return list<Need>
      */
     private static function needs(array $lines): array
     {
-        return array_map(static fn (array $line): Need => new Need($line[0], null === $line[1] ? null : Quantity::ofTwelfths($line[1])), $lines);
+        return array_map(static fn (array $line): Need => new Need($line[0], null === $line[1] ? null : Quantity::ofTwelfths($line[1]), $line[2] ?? false), $lines);
     }
 
     /**

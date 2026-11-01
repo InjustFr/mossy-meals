@@ -15,6 +15,7 @@ final readonly class RecipeLinePayload
         public string $ingredientId = '',
         #[Assert\Range(min: 1, max: Quantity::MAX_TWELFTHS, notInRangeMessage: 'quantity.positive')]
         public ?int $amount = null,
+        public bool $optional = false,
     ) {
     }
 }

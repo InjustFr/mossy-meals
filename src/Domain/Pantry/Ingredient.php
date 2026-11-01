@@ -6,6 +6,7 @@ namespace App\Domain\Pantry;
 
 use App\Domain\Pantry\Exception\EmptyIngredientName;
 use App\Domain\Pantry\Exception\IngredientNameTooLong;
+use App\Domain\Pantry\Exception\MixedVariant;
 use App\Domain\Pantry\Exception\NestedVariant;
 use App\Domain\Pantry\Exception\VariantOfItself;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -41,6 +42,9 @@ class Ingredient
 
     #[ORM\Embedded(class: Quantity::class)]
     private Quantity $lowAt;
+
+    #[ORM\Column(options: ['default' => true])]
+    private bool $alert = true;
 
     #[ORM\Embedded(class: Months::class)]
     private Months $months;
@@ -85,6 +89,16 @@ class Ingredient
         $this->lowAt = $lowAt ?? $unit->defaultLowAt();
     }
 
+    public function alertWhenLow(bool $alert): void
+    {
+        $this->alert = $alert;
+    }
+
+    public function alertsWhenLow(): bool
+    {
+        return $this->alert;
+    }
+
     public function buyIn(Months $months): void
     {
         $this->months = $months;
@@ -103,6 +117,11 @@ class Ingredient
             }
             if (null !== $main->variantOf || !$this->variants->isEmpty()) {
                 throw new NestedVariant($this->name);
+            }
+        }
+        foreach ([$main, ...$this->variants->toArray()] as $relative) {
+            if (null !== $relative && $relative->isHousehold() !== $this->isHousehold()) {
+                throw new MixedVariant($this->name);
             }
         }
 
@@ -144,7 +163,12 @@ class Ingredient
 
     public function isRunningLow(): bool
     {
-        return $this->lowAt->atLeast($this->stock);
+        return $this->alert && $this->lowAt->atLeast($this->stock);
+    }
+
+    public function isHousehold(): bool
+    {
+        return Location::Household === $this->location;
     }
 
     public function isOut(): bool

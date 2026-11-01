@@ -18,6 +18,6 @@ final class AddIngredientController extends AbstractController
 {
     public function __invoke(#[MapRequestPayload] AddIngredientPayload $payload, AddIngredientHandler $addIngredient): JsonResponse
     {
-        return $this->json($addIngredient(new AddIngredient($payload->name, $payload->location, $payload->unit, $payload->manual, $payload->lowAt, $payload->stock, $payload->months, null === $payload->variantOf ? null : Ulid::fromString($payload->variantOf))), Response::HTTP_CREATED);
+        return $this->json($addIngredient(new AddIngredient($payload->name, $payload->location, $payload->unit, $payload->manual, $payload->lowAt, $payload->stock, $payload->months, null === $payload->variantOf ? null : Ulid::fromString($payload->variantOf), $payload->alert)), Response::HTTP_CREATED);
     }
 }

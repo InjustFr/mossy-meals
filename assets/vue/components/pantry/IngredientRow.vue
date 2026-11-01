@@ -51,6 +51,7 @@ const quantity = computed(() => describeQuantity(props.ingredient.stock, props.i
 .row__icon--fridge { background: var(--location-fridge); }
 .row__icon--freezer { background: var(--location-freezer); }
 .row__icon--pantry { background: var(--location-pantry); }
+.row__icon--household { background: var(--location-household); }
 
 .row__text { display: flex; flex: 1; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); min-width: 0; }
 .row__name { max-width: 100%; min-width: var(--target); min-height: var(--target); padding: 0; border: none; background: none; color: var(--color-ink); font-size: var(--font-size); font-weight: 700; text-align: left; overflow-wrap: anywhere; cursor: pointer; }

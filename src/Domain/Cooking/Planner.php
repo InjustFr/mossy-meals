@@ -32,9 +32,11 @@ final readonly class Planner
         foreach ($recipe->lines() as $line) {
             $id = (string) $line->ingredient()->id();
             $made = \count($preps);
-            $used = $this->take($line->ingredient(), $line->amount(), $stock, $preps, $visiting);
+            $used = $this->take($line, $stock, $preps, $visiting);
             if (null === $used) {
-                $missing[] = $line;
+                if (!$line->isOptional()) {
+                    $missing[] = $line;
+                }
                 continue;
             }
             $uses[$id] = $used;
@@ -56,8 +58,10 @@ final readonly class Planner
      * @param list<Recipe>        $preps
      * @param array<string, true> $visiting
      */
-    private function take(Ingredient $wanted, ?Quantity $amount, array &$stock, array &$preps, array $visiting): ?Ingredient
+    private function take(RecipeLine $line, array &$stock, array &$preps, array $visiting): ?Ingredient
     {
+        $wanted = $line->ingredient();
+        $amount = $line->amount();
         $family = $wanted->family();
 
         foreach ($family as $candidate) {
@@ -66,6 +70,10 @@ final readonly class Planner
 
                 return $candidate;
             }
+        }
+
+        if ($line->isOptional()) {
+            return null;
         }
 
         foreach ($family as $candidate) {
@@ -101,7 +109,7 @@ final readonly class Planner
     {
         $visiting[(string) $prep->id()] = true;
         foreach ($prep->lines() as $line) {
-            if (null === $this->take($line->ingredient(), $line->amount(), $stock, $preps, $visiting)) {
+            if (null === $this->take($line, $stock, $preps, $visiting) && !$line->isOptional()) {
                 return false;
             }
         }

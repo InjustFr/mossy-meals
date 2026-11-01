@@ -39,6 +39,12 @@ describe('linesFromRecipe', () => {
         expect(linesFromRecipe(recipe).map((line) => line.amount)).toEqual([12, 0, 0, 0]);
     });
 
+    it('starts an optional line that is out at zero', () => {
+        const toppings = { ingredientId: 't', name: 'Toppings', unit: 'piece', manual: false, amount: 12, stock: 0, covered: false, optional: true };
+
+        expect(linesFromRecipe({ lines: [toppings, { ...toppings, stock: 12, covered: true }] }).map((line) => line.amount)).toEqual([0, 12]);
+    });
+
     it('uses the variant that stands in, at the recipe amount when it shares the unit', () => {
         const fresh = { ingredientId: 'z', name: 'Zucchini', unit: 'piece', manual: false, amount: 24, stock: 0, covered: true };
         const sameUnit = { ...fresh, variant: { ingredientId: 'y', name: 'Yellow zucchini', unit: 'piece', manual: false, stock: 36 } };

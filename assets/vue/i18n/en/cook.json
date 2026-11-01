@@ -14,7 +14,6 @@
     "logMeal": "Log a meal",
     "cookIt": "Cook it",
     "makeIt": "Make it",
-    "low": "{count} running low",
     "later": "Ready after a prep",
     "makeFirst": "Make {name}",
     "prepFirst": "Make the prep"

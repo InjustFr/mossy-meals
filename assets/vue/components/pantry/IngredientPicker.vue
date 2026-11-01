@@ -13,6 +13,7 @@ const props = defineProps({
     exclude: { type: Array, default: () => [] },
     label: { type: String, default: null },
     initialStock: { type: Number, default: undefined },
+    food: { type: Boolean, default: false },
 });
 const emit = defineEmits(['pick']);
 
@@ -28,7 +29,7 @@ const search = ref(null);
 const sheet = ref({ open: false, name: '' });
 
 const needle = computed(() => query.value.trim().toLowerCase());
-const candidates = computed(() => ingredients.value.filter((ingredient) => !props.exclude.includes(ingredient.id)));
+const candidates = computed(() => ingredients.value.filter((ingredient) => !props.exclude.includes(ingredient.id) && !(props.food && ingredient.location === 'household')));
 const matches = computed(() => candidates.value.filter((ingredient) => ingredient.name.toLowerCase().includes(needle.value)));
 const canCreate = computed(() => needle.value !== '' && !ingredients.value.some((ingredient) => ingredient.name.toLowerCase() === needle.value));
 
@@ -83,7 +84,7 @@ const quantityOf = (ingredient) => describeQuantity(ingredient.stock, ingredient
                 </li>
             </ul>
         </div>
-        <IngredientSheet v-model:open="sheet.open" :initial-name="sheet.name" :initial-stock="initialStock" :allow-another="false" @saved="pick" />
+        <IngredientSheet v-model:open="sheet.open" :initial-name="sheet.name" :initial-stock="initialStock" :allow-another="false" :food="food" @saved="pick" />
     </div>
 </template>
 
@@ -104,6 +105,7 @@ const quantityOf = (ingredient) => describeQuantity(ingredient.stock, ingredient
 .picker__place--fridge { background: var(--location-fridge); }
 .picker__place--freezer { background: var(--location-freezer); }
 .picker__place--pantry { background: var(--location-pantry); }
+.picker__place--household { background: var(--location-household); }
 .picker__name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .picker__stock { flex-shrink: 0; color: var(--color-muted); font-size: var(--font-size-sm); font-weight: 600; }
 .picker__none { padding: var(--space-2) var(--space-3); color: var(--color-muted); }

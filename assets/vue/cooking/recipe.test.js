@@ -8,8 +8,8 @@ const view = {
     name: 'Seitan',
     makes: 'prep',
     lines: [
-        { ingredientId: 'a', name: 'Gluten', unit: 'bag', manual: false, amount: 15, stock: 24, covered: true },
-        { ingredientId: 'b', name: 'Spices', unit: 'jar', manual: true, amount: null, stock: 6, covered: true },
+        { ingredientId: 'a', name: 'Gluten', unit: 'bag', manual: false, amount: 15, optional: false, stock: 24, covered: true },
+        { ingredientId: 'b', name: 'Spices', unit: 'jar', manual: true, amount: null, optional: true, stock: 6, covered: true },
     ],
     output: { ingredientId: 'c', name: 'Seitan', unit: 'bag', yield: 18, stock: 0 },
     missing: ['b'],
@@ -18,7 +18,7 @@ const view = {
 
 describe('newLine', () => {
     it('starts at one whole unit', () => {
-        expect(newLine(ingredient)).toEqual({ ingredientId: 'a', name: 'Pasta', unit: 'pack', some: false, whole: 12, fraction: 0 });
+        expect(newLine(ingredient)).toEqual({ ingredientId: 'a', name: 'Pasta', unit: 'pack', some: false, optional: false, whole: 12, fraction: 0 });
     });
 });
 
@@ -46,7 +46,7 @@ describe('formFromView and payloadOf', () => {
     it('round-trips a prep recipe', () => {
         expect(payloadOf(formFromView(view))).toEqual({
             name: 'Seitan',
-            lines: [{ ingredientId: 'a', amount: 15 }, { ingredientId: 'b', amount: null }],
+            lines: [{ ingredientId: 'a', amount: 15, optional: false }, { ingredientId: 'b', amount: null, optional: true }],
             output: { ingredientId: 'c', yield: 18 },
         });
     });

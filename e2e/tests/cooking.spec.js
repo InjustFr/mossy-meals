@@ -37,18 +37,12 @@ test('the demo recipes that can be cooked are on the Cook page, the others are n
     await expect(card(page, 'Seitan stew')).toContainText('Make Seitan first');
     await expect(page.getByRole('button', { name: 'Make the prep: Seitan stew' })).toBeVisible();
     await expect(card(page, 'Berry yoghurt bowl')).toHaveCount(0);
-    await expect(page.getByTestId('running-low')).toContainText('running low');
+    await expect(page.getByTestId('running-low')).toHaveCount(0);
 
     await goTo(page, 'Recipes');
     await expect(card(page, 'Seitan stew')).toContainText('Make Seitan first');
     await expect(card(page, 'Pasta al pomodoro')).toContainText('Can cook');
     await expect(card(page, 'Berry yoghurt bowl')).toContainText('Missing 1');
-});
-
-test('the running-low chip leads to the groceries', async ({ page }) => {
-    await page.getByTestId('running-low').click();
-
-    await expect(page).toHaveURL(/\/groceries$/);
 });
 
 test('a recipe is written, cooked with an edited amount, logged for both eaters and deleted with the ingredients put back', async ({ page }) => {
@@ -281,6 +275,36 @@ test('a short recipe can still be cooked and the preview flags the shortfall', a
     await sheet.getByRole('button', { name: 'Done' }).click();
 
     expect(await stockOf(page, flour)).toBe(0);
+});
+
+test('a recipe stays ready to cook when only an optional ingredient is out', async ({ page }) => {
+    const base = await ingredient(page, unique('Pizza dough'), { stock: 12 });
+    const toppings = unique('Toppings');
+    await ingredient(page, toppings, { stock: 0 });
+    const name = unique('Pizza');
+    const created = await recipe(page, name, [[base, 12]]);
+
+    await page.goto(`/recipes/${created.id}/edit`);
+    await pickIngredient(page, toppings);
+    await page.getByRole('switch', { name: `${toppings} is optional` }).click();
+    await page.getByTestId('save-recipe').click();
+
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
+    await expect(page.getByTestId('recipe-line').filter({ hasText: toppings })).toContainText('Optional');
+    await expect(page.getByTestId('short-note')).toHaveCount(0);
+    await goTo(page, 'Cook');
+    await expect(card(page, name)).toBeVisible();
+});
+
+test('a household item is never offered for a recipe', async ({ page }) => {
+    const soap = unique('Dish soap');
+    await api(page, 'POST', '/api/ingredients', { name: soap, location: 'household', unit: 'bottle', stock: 12 });
+
+    await page.goto('/recipes/new');
+    await page.getByTestId('picker-open').click();
+    await page.getByRole('searchbox', { name: 'Search ingredients' }).fill(soap);
+
+    await expect(page.getByTestId('picker-option').filter({ hasText: soap })).toHaveCount(0);
 });
 
 test('a recipe is edited and then deleted', async ({ page }) => {

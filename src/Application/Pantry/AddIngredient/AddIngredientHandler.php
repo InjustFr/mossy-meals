@@ -40,6 +40,7 @@ final readonly class AddIngredientHandler
         );
         $ingredient->setStock(Quantity::ofTwelfths($command->stock));
         $ingredient->buyIn(Months::of($command->months));
+        $ingredient->alertWhenLow($command->alert);
         $ingredient->makeVariantOf(null === $command->variantOf ? null : $this->ingredients->get($command->variantOf));
         $this->ingredients->add($ingredient);
         $this->transaction->commit();

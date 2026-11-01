@@ -3,13 +3,13 @@ import { splitQuantity, TWELFTHS_PER_UNIT } from '../pantry/quantity.js';
 export const KINDS = ['meal', 'prep'];
 
 export function newLine(ingredient) {
-    return { ingredientId: ingredient.id, name: ingredient.name, unit: ingredient.unit, some: false, whole: TWELFTHS_PER_UNIT, fraction: 0 };
+    return { ingredientId: ingredient.id, name: ingredient.name, unit: ingredient.unit, some: false, optional: false, whole: TWELFTHS_PER_UNIT, fraction: 0 };
 }
 
 export function lineFromView(line) {
     const { whole, fraction } = splitQuantity(line.amount ?? TWELFTHS_PER_UNIT);
 
-    return { ingredientId: line.ingredientId, name: line.name, unit: line.unit, some: line.amount === null, whole, fraction };
+    return { ingredientId: line.ingredientId, name: line.name, unit: line.unit, some: line.amount === null, optional: line.optional, whole, fraction };
 }
 
 export const lineAmount = (line) => (line.some ? null : line.whole + line.fraction);
@@ -30,7 +30,7 @@ export function formFromView(recipe) {
 export function payloadOf(form) {
     return {
         name: form.name.trim(),
-        lines: form.lines.map((line) => ({ ingredientId: line.ingredientId, amount: lineAmount(line) })),
+        lines: form.lines.map((line) => ({ ingredientId: line.ingredientId, amount: lineAmount(line), optional: line.optional })),
         output: form.kind === 'prep' && form.output ? { ingredientId: form.output.id, yield: form.whole + form.fraction } : null,
     };
 }

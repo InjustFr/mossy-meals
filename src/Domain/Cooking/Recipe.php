@@ -7,6 +7,7 @@ namespace App\Domain\Cooking;
 use App\Domain\Cooking\Exception\EmptyRecipeName;
 use App\Domain\Cooking\Exception\IngredientListedTwice;
 use App\Domain\Cooking\Exception\NotAPrep;
+use App\Domain\Cooking\Exception\NotFood;
 use App\Domain\Cooking\Exception\RecipeNameTooLong;
 use App\Domain\Cooking\Exception\RecipeNeedsIngredient;
 use App\Domain\Cooking\Exception\ZeroYield;
@@ -53,7 +54,7 @@ class Recipe
     {
         $this->id = new Ulid();
         $this->name = self::validName($name);
-        $this->output = $output;
+        $this->output = self::validOutput($output);
         $this->yieldTwelfths = null === $output ? null : self::validYield($yield)->twelfths();
         $this->lines = new ArrayCollection();
         $this->follow($needs);
@@ -82,6 +83,7 @@ class Recipe
     public function rewrite(string $name, array $needs, ?Ingredient $output, ?Quantity $yield): void
     {
         $name = self::validName($name);
+        $output = self::validOutput($output);
         $yieldTwelfths = null === $output ? null : self::validYield($yield)->twelfths();
         $this->follow($needs);
         $this->name = $name;
@@ -175,10 +177,10 @@ class Recipe
         foreach ($needs as $position => $need) {
             $id = (string) $need->ingredient->id();
             if (isset($stale[$id])) {
-                $stale[$id]->measure($need->amount, $position);
+                $stale[$id]->measure($need, $position);
                 unset($stale[$id]);
             } else {
-                $this->lines->add(new RecipeLine($this, $need->ingredient, $need->amount, $position));
+                $this->lines->add(new RecipeLine($this, $need, $position));
             }
         }
 
@@ -198,6 +200,15 @@ class Recipe
         }
 
         return $name;
+    }
+
+    private static function validOutput(?Ingredient $output): ?Ingredient
+    {
+        if (null !== $output && $output->isHousehold()) {
+            throw new NotFood($output->name());
+        }
+
+        return $output;
     }
 
     private static function validYield(?Quantity $yield): Quantity

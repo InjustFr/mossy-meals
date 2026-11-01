@@ -19,7 +19,7 @@ export function linesFromRecipe(recipe) {
 
         return lineFromIngredient(
             { id: source.ingredientId, name: source.name, unit: source.unit, manual: source.manual, stock: source.stock },
-            source.manual || line.amount === null || source.unit !== line.unit ? 0 : line.amount,
+            source.manual || line.amount === null || source.unit !== line.unit || (line.optional && !line.covered) ? 0 : line.amount,
         );
     });
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Cooking;
 
 use App\Domain\Cooking\Exception\IngredientListedTwice;
+use App\Domain\Cooking\Exception\NotFood;
 use App\Domain\Cooking\Exception\ZeroQuantity;
 use App\Domain\Pantry\Ingredient;
 use App\Domain\Pantry\Quantity;
@@ -15,6 +16,9 @@ final readonly class Portion
         public Ingredient $ingredient,
         public Quantity $amount,
     ) {
+        if ($ingredient->isHousehold()) {
+            throw new NotFood($ingredient->name());
+        }
         if ($amount->isZero()) {
             throw new ZeroQuantity($ingredient->name());
         }

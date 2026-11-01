@@ -22,7 +22,7 @@ final class EditRecipeController extends AbstractController
         return $this->json($editRecipe(new EditRecipe(
             $id,
             $payload->name,
-            array_map(static fn (RecipeLinePayload $line): RecipeLineInput => new RecipeLineInput($line->ingredientId, $line->amount), $payload->lines),
+            array_map(static fn (RecipeLinePayload $line): RecipeLineInput => new RecipeLineInput($line->ingredientId, $line->amount, $line->optional), $payload->lines),
             $payload->output?->ingredientId,
             $payload->output?->yield,
         )));

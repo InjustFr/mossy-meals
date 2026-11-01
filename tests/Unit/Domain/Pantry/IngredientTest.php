@@ -7,6 +7,7 @@ namespace App\Tests\Unit\Domain\Pantry;
 use App\Domain\Pantry\Exception\EmptyIngredientName;
 use App\Domain\Pantry\Exception\IngredientNameTooLong;
 use App\Domain\Pantry\Exception\InvalidMonth;
+use App\Domain\Pantry\Exception\MixedVariant;
 use App\Domain\Pantry\Exception\NestedVariant;
 use App\Domain\Pantry\Exception\QuantityOutOfRange;
 use App\Domain\Pantry\Exception\VariantOfItself;
@@ -128,6 +129,17 @@ final class IngredientTest extends TestCase
         self::assertTrue($milk->isOut());
     }
 
+    public function testWithoutAlertItIsNeverRunningLow(): void
+    {
+        $sauce = self::ingredient('Pesto', Unit::Jar);
+        self::assertTrue($sauce->alertsWhenLow());
+
+        $sauce->alertWhenLow(false);
+
+        self::assertFalse($sauce->isRunningLow());
+        self::assertTrue($sauce->isOut());
+    }
+
     public function testIsBoughtAllYearUntilToldOtherwise(): void
     {
         $zucchini = self::ingredient('Zucchini');
@@ -208,6 +220,26 @@ final class IngredientTest extends TestCase
         $this->expectExceptionObject(new NestedVariant('Zucchini'));
 
         $zucchini->makeVariantOf(self::ingredient('Courgette'));
+    }
+
+    public function testHouseholdItemsAndIngredientsNeverShareAFamily(): void
+    {
+        $soap = Ingredient::add('Soap', Location::Household, Unit::Bottle, false, null, new \DateTimeImmutable());
+        $refill = Ingredient::add('Soap refill', Location::Household, Unit::Bag, false, null, new \DateTimeImmutable());
+        $refill->makeVariantOf($soap);
+        self::assertTrue($soap->isHousehold());
+
+        try {
+            self::ingredient('Olive oil')->makeVariantOf($soap);
+            self::fail('An ingredient joined a household family.');
+        } catch (MixedVariant $exception) {
+            self::assertEquals(new MixedVariant('Olive oil'), $exception);
+        }
+
+        $soap->describe('Soap', Location::Pantry, Unit::Bottle, false, null);
+        $this->expectExceptionObject(new MixedVariant('Soap'));
+
+        $soap->makeVariantOf(null);
     }
 
     private static function ingredient(string $name = 'Eggs', Unit $unit = Unit::Piece, bool $manual = false, ?Quantity $lowAt = null): Ingredient

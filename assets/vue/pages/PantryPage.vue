@@ -1,6 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { PhCarrot, PhMagnifyingGlass, PhPlus, PhShoppingCart } from '@phosphor-icons/vue';
+import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import IngredientRow from '../components/pantry/IngredientRow.vue';
 import IngredientSheet from '../components/pantry/IngredientSheet.vue';
@@ -28,6 +29,7 @@ const stockSheet = reactive({ open: false, ingredient: null });
 
 const placeOptions = computed(() => ['all', ...LOCATIONS].map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
 const rows = computed(() => ingredients.value.map(adjustments.view));
+const runningLow = computed(() => ingredients.value.filter((ingredient) => ingredient.suggested).length);
 const needle = computed(() => query.value.trim().toLowerCase());
 const matches = computed(() => rows.value.filter((row) => (needle.value ? row.name.toLowerCase().includes(needle.value) : place.value === 'all' || row.location === place.value)));
 const canAdd = computed(() => needle.value !== '' && !rows.value.some((row) => row.name.toLowerCase() === needle.value));
@@ -56,6 +58,8 @@ function setStock(row) {
             <BaseButton to="/groceries" variant="secondary" data-test="go-shopping"><PhShoppingCart size="1.125rem" weight="bold" aria-hidden="true" />{{ t('pantry.groceries') }}</BaseButton>
         </PageHeader>
 
+        <RouterLink v-if="runningLow > 0" to="/groceries" class="pantry__low" data-test="running-low"><PhShoppingCart size="1.25rem" weight="duotone" aria-hidden="true" />{{ t('pantry.low', { count: runningLow }, runningLow) }}</RouterLink>
+
         <div class="pantry__tools">
             <ChipGroup v-model="place" variant="segmented" :options="placeOptions" :label="t('pantry.location.label')" />
             <div class="pantry__search">
@@ -80,6 +84,8 @@ function setStock(row) {
 </template>
 
 <style scoped>
+.pantry__low { display: inline-flex; align-self: flex-start; align-items: center; gap: var(--space-2); min-height: var(--target); padding: 0 var(--space-4); border: 0.125rem solid var(--color-highlight); border-radius: var(--radius-pill); background: var(--color-highlight-soft); color: var(--color-ink); font-weight: 800; text-decoration: none; }
+.pantry__low:hover { background: var(--color-highlight); }
 .pantry__tools { display: flex; flex-direction: column; gap: var(--space-3); }
 .pantry__search { position: relative; }
 .pantry__search-icon { position: absolute; top: 50%; left: var(--space-4); color: var(--color-muted); pointer-events: none; transform: translateY(-50%); }

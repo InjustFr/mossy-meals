@@ -7,6 +7,7 @@ namespace App\Tests\Unit\Domain\Cooking;
 use App\Domain\Cooking\Exception\EmptyRecipeName;
 use App\Domain\Cooking\Exception\IngredientListedTwice;
 use App\Domain\Cooking\Exception\NotAPrep;
+use App\Domain\Cooking\Exception\NotFood;
 use App\Domain\Cooking\Exception\RecipeNameTooLong;
 use App\Domain\Cooking\Exception\RecipeNeedsIngredient;
 use App\Domain\Cooking\Exception\ZeroQuantity;
@@ -215,9 +216,32 @@ final class RecipeTest extends TestCase
         new Portion(self::ingredient('Gluten', 12), Quantity::zero());
     }
 
-    private static function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): Ingredient
+    public function testAHouseholdItemIsNeverALineAPortionOrAPrepOutput(): void
     {
-        $ingredient = Ingredient::add($name, Location::Pantry, $unit, $manual, null, new \DateTimeImmutable());
+        $soap = self::ingredient('Soap', 12, location: Location::Household);
+        $gluten = self::ingredient('Gluten', 12);
+        $recipe = Recipe::meal('Seitan', [new Need($gluten, null)], new \DateTimeImmutable());
+        $attempts = [
+            'line' => static fn (): Need => new Need($soap, null),
+            'portion' => static fn (): Portion => new Portion($soap, Quantity::ofTwelfths(12)),
+            'prep' => static fn (): Recipe => Recipe::prep('Soap', [new Need($gluten, null)], $soap, Quantity::ofTwelfths(12), new \DateTimeImmutable()),
+            'rewrite' => static fn () => $recipe->rewrite('Seitan', [new Need($gluten, null)], $soap, Quantity::ofTwelfths(12)),
+        ];
+
+        foreach ($attempts as $what => $attempt) {
+            try {
+                $attempt();
+                self::fail("A household $what was accepted.");
+            } catch (NotFood $exception) {
+                self::assertEquals(new NotFood('Soap'), $exception);
+            }
+        }
+        self::assertNull($recipe->output());
+    }
+
+    private static function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false, Location $location = Location::Pantry): Ingredient
+    {
+        $ingredient = Ingredient::add($name, $location, $unit, $manual, null, new \DateTimeImmutable());
         $ingredient->setStock(Quantity::ofTwelfths($stock));
 
         return $ingredient;

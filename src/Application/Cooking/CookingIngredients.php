@@ -24,7 +24,7 @@ final readonly class CookingIngredients
     public function needs(array $lines): array
     {
         return array_map(
-            fn (RecipeLineInput $line): Need => new Need($this->ingredients->get(Ulid::fromString($line->ingredientId)), null === $line->amount ? null : Quantity::ofTwelfths($line->amount)),
+            fn (RecipeLineInput $line): Need => new Need($this->ingredients->get(Ulid::fromString($line->ingredientId)), null === $line->amount ? null : Quantity::ofTwelfths($line->amount), $line->optional),
             $lines,
         );
     }

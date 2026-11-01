@@ -98,6 +98,23 @@ final class RecipeApiTest extends WebTestCase
         self::assertSame(['ingredientId' => $frozen, 'name' => 'Frozen zucchini', 'unit' => 'bag', 'manual' => false, 'stock' => 6], Json::at($gratin, 'lines', 0, 'variant'));
     }
 
+    public function testAnOptionalLineThatIsOutKeepsTheRecipeMakeable(): void
+    {
+        $client = self::signedInClient();
+        $dough = self::ingredient($client, 'Dough', 12);
+        $toppings = self::ingredient($client, 'Toppings', 0);
+
+        $client->jsonRequest('POST', '/api/recipes', ['name' => 'Pizza', 'lines' => [['ingredientId' => $dough, 'amount' => 12], ['ingredientId' => $toppings, 'amount' => 12, 'optional' => true]]]);
+        self::assertResponseStatusCodeSame(201);
+        $pizza = self::body($client);
+        self::assertSame([true, []], [$pizza['makeable'], $pizza['missing']]);
+        self::assertSame([[false, true], [true, false]], array_map(static fn (mixed $line): array => [Json::at($line, 'optional'), Json::at($line, 'covered')], Json::array($pizza, 'lines')));
+        $id = Json::string($pizza, 'id');
+
+        $client->jsonRequest('PUT', "/api/recipes/$id", ['name' => 'Pizza', 'lines' => [['ingredientId' => $dough, 'amount' => 12], ['ingredientId' => $toppings, 'amount' => 12]]]);
+        self::assertSame([false, [$toppings]], [self::body($client)['makeable'], self::body($client)['missing']]);
+    }
+
     public function testAMealRecipeCannotBeMade(): void
     {
         $client = self::signedInClient();
@@ -273,6 +290,24 @@ final class RecipeApiTest extends WebTestCase
         yield 'zero used' => [['made' => 12, 'used' => [['ingredientId' => 'GLUTEN', 'amount' => 0]]]];
         yield 'malformed used ingredient' => [['made' => 12, 'used' => [['ingredientId' => 'gluten', 'amount' => 6]]]];
         yield 'the same ingredient twice' => [['made' => 12, 'used' => [['ingredientId' => 'GLUTEN', 'amount' => 6], ['ingredientId' => 'GLUTEN', 'amount' => 6]]]];
+    }
+
+    public function testHouseholdItemsNeverGoIntoRecipes(): void
+    {
+        $client = self::signedInClient();
+        $pasta = self::ingredient($client, 'Pasta', 24);
+        $client->jsonRequest('POST', '/api/ingredients', ['name' => 'Soap', 'location' => 'household', 'unit' => 'bottle', 'stock' => 12]);
+        $soap = Json::string(self::body($client), 'id');
+
+        $client->jsonRequest('POST', '/api/recipes', ['name' => 'Soapy pasta', 'lines' => [['ingredientId' => $pasta, 'amount' => 12], ['ingredientId' => $soap, 'amount' => 12]]]);
+        self::assertResponseStatusCodeSame(422);
+
+        $client->jsonRequest('POST', '/api/recipes', ['name' => 'Pasta bake', 'lines' => [['ingredientId' => $pasta, 'amount' => 12]]]);
+        $client->jsonRequest('PUT', "/api/ingredients/$pasta", ['name' => 'Pasta', 'location' => 'household', 'unit' => 'piece']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('“Pasta” cannot be a household item: it is used by Pasta bake.', Json::string(self::body($client), 'detail'));
+        $client->jsonRequest('GET', '/api/ingredients');
+        self::assertSame(['pantry', 'household'], array_column(self::body($client), 'location'));
     }
 
     public function testAnIngredientUsedByARecipeCannotBeDeleted(): void

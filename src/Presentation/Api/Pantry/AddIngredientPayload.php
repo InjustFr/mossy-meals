@@ -30,6 +30,7 @@ final readonly class AddIngredientPayload
         public array $months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         #[Assert\Ulid(message: 'id.invalid')]
         public ?string $variantOf = null,
+        public bool $alert = true,
     ) {
     }
 }
