@@ -14,7 +14,7 @@ ingredient:
     invalid_month: '{month} n’est pas un mois : un mois va de 1 à 12.'
     variant_of_itself: '« {name} » ne peut pas être une variante de lui-même.'
     nested_variant: '« {name} » ne peut pas être une variante : les variantes n’ont qu’un niveau, sous un ingrédient principal.'
-    mixed_variant: '« {name} » ne peut pas être dans cette famille : articles de maison et ingrédients ne se mélangent pas.'
+    household_variant: '« {name} » ne peut pas faire partie d’une famille de variantes : les articles de maison n’ont pas de variantes.'
     household_in_recipe: '« {name} » ne peut pas devenir un article de maison : il est utilisé par {recipes}.'
 recipe:
     empty_name: 'Donnez un nom à la recette.'

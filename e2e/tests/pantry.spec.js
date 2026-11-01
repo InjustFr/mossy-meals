@@ -55,6 +55,12 @@ test('household supplies live at home, apart from the ingredients', async ({ pag
     await expect(row(page, 'Toilet paper')).toContainText('Low');
     await expect(row(page, 'Milk')).toHaveCount(0);
 
+    await row(page, 'Toilet paper').getByRole('button', { name: 'Toilet paper (edit)' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Edit ingredient' });
+    await expect(sheet.getByRole('switch', { name: 'Stock alert' })).toBeVisible();
+    for (const field of ['Track by hand', 'Buy in', 'Variant of']) await expect(sheet.getByText(field, { exact: true })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+
     await place(page, 'Pantry').click();
     await expect(row(page, 'Toilet paper')).toHaveCount(0);
 });

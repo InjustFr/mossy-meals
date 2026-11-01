@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Pantry;
 
 use App\Domain\Pantry\Exception\EmptyIngredientName;
+use App\Domain\Pantry\Exception\HouseholdVariant;
 use App\Domain\Pantry\Exception\IngredientNameTooLong;
-use App\Domain\Pantry\Exception\MixedVariant;
 use App\Domain\Pantry\Exception\NestedVariant;
 use App\Domain\Pantry\Exception\VariantOfItself;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -67,7 +67,7 @@ class Ingredient
         $this->name = self::validName($name);
         $this->location = $location;
         $this->unit = $unit;
-        $this->manual = $manual;
+        $this->manual = $manual || Location::Household === $location;
         $this->stock = Quantity::zero();
         $this->lowAt = $lowAt ?? $unit->defaultLowAt();
         $this->months = Months::all();
@@ -85,7 +85,7 @@ class Ingredient
         $this->name = self::validName($name);
         $this->location = $location;
         $this->unit = $unit;
-        $this->manual = $manual;
+        $this->manual = $manual || Location::Household === $location;
         $this->lowAt = $lowAt ?? $unit->defaultLowAt();
     }
 
@@ -101,7 +101,7 @@ class Ingredient
 
     public function buyIn(Months $months): void
     {
-        $this->months = $months;
+        $this->months = $this->isHousehold() ? Months::all() : $months;
     }
 
     public function isBoughtIn(int $month): bool
@@ -120,8 +120,8 @@ class Ingredient
             }
         }
         foreach ([$main, ...$this->variants->toArray()] as $relative) {
-            if (null !== $relative && $relative->isHousehold() !== $this->isHousehold()) {
-                throw new MixedVariant($this->name);
+            if (null !== $relative && ($relative->isHousehold() || $this->isHousehold())) {
+                throw new HouseholdVariant($this->name);
             }
         }
 

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Domain\Pantry;
 
 use App\Domain\Pantry\Exception\EmptyIngredientName;
+use App\Domain\Pantry\Exception\HouseholdVariant;
 use App\Domain\Pantry\Exception\IngredientNameTooLong;
 use App\Domain\Pantry\Exception\InvalidMonth;
-use App\Domain\Pantry\Exception\MixedVariant;
 use App\Domain\Pantry\Exception\NestedVariant;
 use App\Domain\Pantry\Exception\QuantityOutOfRange;
 use App\Domain\Pantry\Exception\VariantOfItself;
@@ -222,24 +222,42 @@ final class IngredientTest extends TestCase
         $zucchini->makeVariantOf(self::ingredient('Courgette'));
     }
 
-    public function testHouseholdItemsAndIngredientsNeverShareAFamily(): void
+    public function testAHouseholdItemIsTrackedByHandAndBoughtAllYear(): void
     {
         $soap = Ingredient::add('Soap', Location::Household, Unit::Bottle, false, null, new \DateTimeImmutable());
-        $refill = Ingredient::add('Soap refill', Location::Household, Unit::Bag, false, null, new \DateTimeImmutable());
-        $refill->makeVariantOf($soap);
-        self::assertTrue($soap->isHousehold());
+        $soap->buyIn(Months::of([]));
+        self::assertSame([true, true, range(1, 12)], [$soap->isHousehold(), $soap->isManual(), $soap->months()->toList()]);
 
-        try {
-            self::ingredient('Olive oil')->makeVariantOf($soap);
-            self::fail('An ingredient joined a household family.');
-        } catch (MixedVariant $exception) {
-            self::assertEquals(new MixedVariant('Olive oil'), $exception);
+        $rice = self::ingredient('Rice');
+        $rice->describe('Rice', Location::Household, Unit::Bag, false, null);
+
+        self::assertTrue($rice->isManual());
+    }
+
+    public function testAHouseholdItemHasNoVariants(): void
+    {
+        $soap = Ingredient::add('Soap', Location::Household, Unit::Bottle, false, null, new \DateTimeImmutable());
+        $attempts = [
+            'Soap refill' => static fn () => Ingredient::add('Soap refill', Location::Household, Unit::Bag, false, null, new \DateTimeImmutable())->makeVariantOf($soap),
+            'Olive oil' => static fn () => self::ingredient('Olive oil')->makeVariantOf($soap),
+            'Soap' => static fn () => $soap->makeVariantOf(self::ingredient('Olive oil')),
+        ];
+
+        foreach ($attempts as $name => $attempt) {
+            try {
+                $attempt();
+                self::fail("$name joined a family with a household item.");
+            } catch (HouseholdVariant $exception) {
+                self::assertEquals(new HouseholdVariant($name), $exception);
+            }
         }
 
-        $soap->describe('Soap', Location::Pantry, Unit::Bottle, false, null);
-        $this->expectExceptionObject(new MixedVariant('Soap'));
+        $zucchini = self::ingredient('Zucchini');
+        self::ingredient('Frozen zucchini')->makeVariantOf($zucchini);
+        $zucchini->describe('Zucchini', Location::Household, Unit::Piece, false, null);
+        $this->expectExceptionObject(new HouseholdVariant('Zucchini'));
 
-        $soap->makeVariantOf(null);
+        $zucchini->makeVariantOf(null);
     }
 
     private static function ingredient(string $name = 'Eggs', Unit $unit = Unit::Piece, bool $manual = false, ?Quantity $lowAt = null): Ingredient

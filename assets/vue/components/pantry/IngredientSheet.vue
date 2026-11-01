@@ -48,6 +48,7 @@ const saving = ref(false);
 const nameInput = ref(null);
 
 const editing = computed(() => props.ingredient !== null);
+const household = computed(() => location.value === 'household');
 const capitalize = (text) => text.charAt(0).toLocaleUpperCase() + text.slice(1);
 const locationOptions = computed(() => LOCATIONS.filter((value) => !props.food || value !== 'household').map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
 const unitOptions = computed(() => UNITS.map((value) => ({ value, label: capitalize(t(`units.${value}.one`)) })));
@@ -59,7 +60,7 @@ const monthOptions = computed(() => {
 const hasVariants = computed(() => editing.value && props.ingredient.variantOf === null && props.ingredients.some((candidate) => candidate.variantOf === props.ingredient.id));
 const variantOptions = computed(() => [
     { value: null, label: t('pantry.sheet.noVariant') },
-    ...props.ingredients.filter((candidate) => candidate.variantOf === null && candidate.id !== props.ingredient?.id && (candidate.location === 'household') === (location.value === 'household')).map((candidate) => ({ value: candidate.id, label: candidate.name })),
+    ...props.ingredients.filter((candidate) => candidate.variantOf === null && candidate.id !== props.ingredient?.id && candidate.location !== 'household').map((candidate) => ({ value: candidate.id, label: candidate.name })),
 ]);
 
 watch(open, (isOpen) => {
@@ -100,7 +101,7 @@ function focusName(event) {
 async function save(another) {
     saving.value = true;
     nameError.value = null;
-    const body = { name: name.value, location: location.value, unit: unit.value, manual: manual.value, lowAt: lowAt.value, alert: alert.value, months: months.value, variantOf: variantOf.value, ...(editing.value ? {} : { stock: whole.value + fraction.value }) };
+    const body = { name: name.value, location: location.value, unit: unit.value, manual: manual.value || household.value, lowAt: lowAt.value, alert: alert.value, months: household.value ? ALL_MONTHS : months.value, variantOf: household.value ? null : variantOf.value, ...(editing.value ? {} : { stock: whole.value + fraction.value }) };
     try {
         if (editing.value) {
             emit('saved', await api.put(`/api/ingredients/${props.ingredient.id}`, body));
@@ -155,7 +156,7 @@ async function remove() {
                     <FractionChips v-model="fraction" :label="t('pantry.sheet.stockFraction')" />
                 </FormField>
             </template>
-            <FormField :label="t('pantry.sheet.manual')" :hint="t('pantry.sheet.manualHint')" as="div">
+            <FormField v-if="!household" :label="t('pantry.sheet.manual')" :hint="t('pantry.sheet.manualHint')" as="div">
                 <BaseSwitch v-model="manual" :label="t('pantry.sheet.manual')" />
             </FormField>
             <FormField :label="t('pantry.sheet.alert')" :hint="t('pantry.sheet.alertHint')" as="div">
@@ -164,14 +165,14 @@ async function remove() {
             <FormField v-if="alert" :label="t('pantry.sheet.lowAt')" as="div">
                 <QuantityStepper v-model="lowAt" :label="t('pantry.sheet.lowAt')" :decrease-label="t('pantry.sheet.less')" :increase-label="t('pantry.sheet.more')" :step="lowAtStep" :max="MAX_TWELFTHS" />
             </FormField>
-            <FormField :label="t('pantry.sheet.months')" :hint="t('pantry.sheet.monthsHint')" as="div">
+            <FormField v-if="!household" :label="t('pantry.sheet.months')" :hint="t('pantry.sheet.monthsHint')" as="div">
                 <ChipGroup v-model="months" multiple allow-none :options="monthOptions" :label="t('pantry.sheet.months')" data-test="months" />
                 <div class="ingredient-sheet__months">
                     <BaseButton variant="ghost" :disabled="months.length === 12" @click="months = ALL_MONTHS">{{ t('pantry.sheet.allYear') }}</BaseButton>
                     <BaseButton variant="ghost" :disabled="months.length === 0" data-test="never" @click="months = []">{{ t('pantry.sheet.never') }}</BaseButton>
                 </div>
             </FormField>
-            <FormField v-if="ingredients.length > 0 && !hasVariants" :label="t('pantry.sheet.variantOf')" :hint="t('pantry.sheet.variantOfHint')">
+            <FormField v-if="ingredients.length > 0 && !hasVariants && !household" :label="t('pantry.sheet.variantOf')" :hint="t('pantry.sheet.variantOfHint')">
                 <BaseSelect v-model="variantOf" :options="variantOptions" data-test="variant-of" />
             </FormField>
         </form>

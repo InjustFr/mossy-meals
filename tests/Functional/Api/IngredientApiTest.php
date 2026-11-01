@@ -137,10 +137,10 @@ final class IngredientApiTest extends WebTestCase
     public function testHouseholdSuppliesAreKeptLikeIngredients(): void
     {
         $client = self::signedInClient();
-        $client->jsonRequest('POST', '/api/ingredients', ['name' => 'Toilet paper', 'location' => 'household', 'unit' => 'pack']);
+        $client->jsonRequest('POST', '/api/ingredients', ['name' => 'Toilet paper', 'location' => 'household', 'unit' => 'pack', 'manual' => false, 'months' => []]);
 
         self::assertResponseStatusCodeSame(201);
-        self::assertSame(['household', true], [self::body($client)['location'], self::body($client)['suggested']]);
+        self::assertSame(['household', true, range(1, 12), true], [self::body($client)['location'], self::body($client)['manual'], self::body($client)['months'], self::body($client)['suggested']]);
     }
 
     public function testDeletingAMainIngredientFreesItsVariants(): void
