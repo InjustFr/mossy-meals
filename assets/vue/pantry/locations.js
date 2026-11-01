@@ -9,6 +9,8 @@ export const KIND_ICONS = {
 
 export const LOCATIONS = ['fridge', 'freezer', 'pantry', 'home'];
 
+export const INGREDIENT_LOCATIONS = LOCATIONS.filter((location) => location !== 'home');
+
 export const UNITS = ['piece', 'bottle', 'jar', 'pack', 'bag', 'box', 'carton', 'can', 'tub'];
 
 export const LOCATION_ICONS = {

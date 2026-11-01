@@ -13,7 +13,7 @@ import PageHeader from '../components/ui/PageHeader.vue';
 import PageSection from '../components/ui/PageSection.vue';
 import { useApi } from '../composables/useApi.js';
 import { useStockAdjustments } from '../composables/useStockAdjustments.js';
-import { KIND_ICONS, KINDS, LOCATION_ICONS, LOCATIONS } from '../pantry/locations.js';
+import { INGREDIENT_LOCATIONS, KIND_ICONS, KINDS, LOCATION_ICONS, LOCATIONS } from '../pantry/locations.js';
 
 const { t } = useI18n();
 const api = useApi();
@@ -29,7 +29,7 @@ const itemSheet = reactive({ open: false, item: null, name: '' });
 const stockSheet = reactive({ open: false, item: null });
 
 const kindOptions = computed(() => KINDS.map((value) => ({ value, label: t(`pantry.kinds.${value}`), icon: KIND_ICONS[value] })));
-const placeOptions = computed(() => ['all', ...LOCATIONS].map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
+const placeOptions = computed(() => ['all', ...INGREDIENT_LOCATIONS].map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
 const rows = computed(() => items.value.map(adjustments.view));
 const runningLow = computed(() => items.value.filter((item) => item.suggested).length);
 const needle = computed(() => query.value.trim().toLowerCase());

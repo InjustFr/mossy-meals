@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useApi } from '../../composables/useApi.js';
 import { useToast } from '../../composables/useToast.js';
 import { intlLocale } from '../../i18n/locale.js';
-import { KIND_ICONS, KINDS, LOCATION_ICONS, LOCATIONS, UNITS } from '../../pantry/locations.js';
+import { INGREDIENT_LOCATIONS, KIND_ICONS, KINDS, LOCATION_ICONS, LOCATIONS, UNITS } from '../../pantry/locations.js';
 import { defaultLowAt, MAX_TWELFTHS, TWELFTHS_PER_UNIT } from '../../pantry/quantity.js';
 import BaseButton from '../ui/BaseButton.vue';
 import BaseSelect from '../ui/BaseSelect.vue';
@@ -53,7 +53,7 @@ const editing = computed(() => props.item !== null);
 const household = computed(() => kind.value === 'household');
 const kindOptions = computed(() => KINDS.map((value) => ({ value, label: t(`pantry.kind.${value}`), icon: KIND_ICONS[value] })));
 const capitalize = (text) => text.charAt(0).toLocaleUpperCase() + text.slice(1);
-const locationOptions = computed(() => LOCATIONS.map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
+const locationOptions = computed(() => (kind.value === 'household' || location.value === 'home' ? LOCATIONS : INGREDIENT_LOCATIONS).map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
 const unitOptions = computed(() => UNITS.map((value) => ({ value, label: capitalize(t(`units.${value}.one`)) })));
 const lowAtStep = computed(() => defaultLowAt(unit.value));
 const monthOptions = computed(() => {
@@ -92,6 +92,7 @@ function resetStock() {
 
 function changeKind(next) {
     if (!editing.value) location.value = next === 'household' ? 'home' : props.initialLocation;
+    else if (next === 'ingredient' && location.value === 'home') location.value = 'pantry';
     kind.value = next;
 }
 
