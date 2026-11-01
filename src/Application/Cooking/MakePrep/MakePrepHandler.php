@@ -9,7 +9,7 @@ use App\Application\Cooking\RecipeView;
 use App\Application\Cooking\RecipeViews;
 use App\Application\Transaction;
 use App\Domain\Cooking\RecipeRepository;
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\Quantity;
 
 final readonly class MakePrepHandler
 {

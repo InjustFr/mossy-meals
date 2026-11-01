@@ -17,6 +17,6 @@ final class AddGroceryItemController extends AbstractController
 {
     public function __invoke(#[MapRequestPayload] AddGroceryItemPayload $payload, AddGroceryItemHandler $addGroceryItem): JsonResponse
     {
-        return $this->json($addGroceryItem(new AddGroceryItem(Ulid::fromString($payload->ingredientId))));
+        return $this->json($addGroceryItem(new AddGroceryItem(Ulid::fromString($payload->itemId))));
     }
 }

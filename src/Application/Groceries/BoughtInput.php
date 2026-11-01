@@ -7,7 +7,7 @@ namespace App\Application\Groceries;
 final readonly class BoughtInput
 {
     public function __construct(
-        public string $ingredientId,
+        public string $itemId,
         public int $amount,
     ) {
     }

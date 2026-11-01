@@ -7,14 +7,14 @@ import { useToast } from '../../composables/useToast.js';
 import { currentLanguage } from '../../i18n/locale.js';
 import { prepareRows } from '../../groceries/lists.js';
 import { describeQuantity } from '../../pantry/quantity.js';
-import IngredientPicker from '../pantry/IngredientPicker.vue';
+import ItemPicker from '../pantry/ItemPicker.vue';
 import BaseButton from '../ui/BaseButton.vue';
 import EmptyState from '../ui/EmptyState.vue';
 import PageSection from '../ui/PageSection.vue';
 import TickRow from './TickRow.vue';
 
 const props = defineProps({
-    ingredients: { type: Array, required: true },
+    items: { type: Array, required: true },
 });
 
 const { t } = useI18n();
@@ -25,7 +25,7 @@ const extraIds = ref([]);
 const skipped = ref([]);
 const starting = ref(false);
 
-const rows = computed(() => prepareRows(props.ingredients, extraIds.value));
+const rows = computed(() => prepareRows(props.items, extraIds.value));
 const chosen = computed(() => rows.value.filter((row) => !skipped.value.includes(row.id)));
 const listed = computed(() => rows.value.map((row) => row.id));
 
@@ -35,13 +35,13 @@ function choose(row, ticked) {
     skipped.value = ticked ? skipped.value.filter((id) => id !== row.id) : [...skipped.value, row.id];
 }
 
-function add(ingredient) {
-    extraIds.value = [...extraIds.value, ingredient.id];
+function add(item) {
+    extraIds.value = [...extraIds.value, item.id];
 }
 
 async function start() {
     starting.value = true;
-    await toast.attempt(() => api.post('/api/grocery-list', { ingredientIds: chosen.value.map((row) => row.id) }), t('groceries.prepare.starting'));
+    await toast.attempt(() => api.post('/api/grocery-list', { itemIds: chosen.value.map((row) => row.id) }), t('groceries.prepare.starting'));
     starting.value = false;
 }
 </script>
@@ -67,7 +67,7 @@ async function start() {
         </PageSection>
         <EmptyState v-else :icon="PhBasket" :title="t('groceries.prepare.empty.title')" :hint="t('groceries.prepare.empty.hint')" />
 
-        <IngredientPicker :exclude="listed" :label="t('groceries.prepare.add')" :initial-stock="0" @pick="add" />
+        <ItemPicker :exclude="listed" :label="t('groceries.prepare.add')" :initial-stock="0" @pick="add" />
 
         <BaseButton class="prepare__start" :loading="starting" :disabled="chosen.length === 0" data-test="start-shopping" @click="start">{{ t('groceries.prepare.start') }}</BaseButton>
     </div>

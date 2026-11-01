@@ -16,10 +16,11 @@ use App\Domain\Cooking\Need;
 use App\Domain\Cooking\Portion;
 use App\Domain\Cooking\Recipe;
 use App\Domain\Cooking\RecipeLine;
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Quantity;
-use App\Domain\Pantry\Unit;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Kind;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Quantity;
+use App\Domain\Stock\Unit;
 use PHPUnit\Framework\TestCase;
 
 final class RecipeTest extends TestCase
@@ -218,7 +219,7 @@ final class RecipeTest extends TestCase
 
     public function testAHouseholdItemIsNeverALineAPortionOrAPrepOutput(): void
     {
-        $soap = self::ingredient('Soap', 12, location: Location::Household);
+        $soap = self::ingredient('Soap', 12, kind: Kind::Household);
         $gluten = self::ingredient('Gluten', 12);
         $recipe = Recipe::meal('Seitan', [new Need($gluten, null)], new \DateTimeImmutable());
         $attempts = [
@@ -239,9 +240,9 @@ final class RecipeTest extends TestCase
         self::assertNull($recipe->output());
     }
 
-    private static function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false, Location $location = Location::Pantry): Ingredient
+    private static function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false, Kind $kind = Kind::Ingredient): Item
     {
-        $ingredient = Ingredient::add($name, $location, $unit, $manual, null, new \DateTimeImmutable());
+        $ingredient = Item::add($name, $kind, Location::Pantry, $unit, $manual, null, new \DateTimeImmutable());
         $ingredient->setStock(Quantity::ofTwelfths($stock));
 
         return $ingredient;

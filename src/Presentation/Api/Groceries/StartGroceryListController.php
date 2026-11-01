@@ -17,6 +17,6 @@ final class StartGroceryListController extends AbstractController
 {
     public function __invoke(#[MapRequestPayload] StartGroceryListPayload $payload, StartGroceryListHandler $startGroceryList): JsonResponse
     {
-        return $this->json($startGroceryList(new StartGroceryList($payload->ingredientIds)), Response::HTTP_CREATED);
+        return $this->json($startGroceryList(new StartGroceryList($payload->itemIds)), Response::HTTP_CREATED);
     }
 }

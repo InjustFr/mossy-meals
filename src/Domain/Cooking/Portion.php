@@ -7,13 +7,13 @@ namespace App\Domain\Cooking;
 use App\Domain\Cooking\Exception\IngredientListedTwice;
 use App\Domain\Cooking\Exception\NotFood;
 use App\Domain\Cooking\Exception\ZeroQuantity;
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Quantity;
 
 final readonly class Portion
 {
     public function __construct(
-        public Ingredient $ingredient,
+        public Item $ingredient,
         public Quantity $amount,
     ) {
         if ($ingredient->isHousehold()) {

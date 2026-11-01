@@ -13,10 +13,10 @@ async function api(page, method, url, body) {
     }, { method, url, body });
 }
 
-const ingredient = (page, name, { stock = 12, unit = 'piece', manual = false } = {}) => api(page, 'POST', '/api/ingredients', { name, location: 'pantry', unit, manual, stock });
+const ingredient = (page, name, { stock = 12, unit = 'piece', manual = false } = {}) => api(page, 'POST', '/api/items', { name, location: 'pantry', unit, manual, stock });
 const recipe = (page, name, lines, output = null) => api(page, 'POST', '/api/recipes', { name, lines: lines.map(([item, amount = null]) => ({ ingredientId: item.id, amount })), output: output && { ingredientId: output[0].id, yield: output[1] } });
 const goTo = (page, tab) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: tab }).click();
-const stockOf = async (page, name) => (await api(page, 'GET', '/api/ingredients')).find((item) => item.name === name).stock;
+const stockOf = async (page, name) => (await api(page, 'GET', '/api/items')).find((item) => item.name === name).stock;
 const card = (page, name) => page.getByTestId('recipe-card').filter({ has: page.getByRole('link', { name, exact: true }) });
 
 async function pickIngredient(page, name) {
@@ -183,7 +183,7 @@ test('a variant in stock stands in for the ingredient a recipe needs', async ({ 
     const frozen = unique('Frozen zucchini');
     const dish = unique('Zucchini gratin');
     const freshItem = await ingredient(page, fresh, { stock: 0 });
-    await api(page, 'POST', '/api/ingredients', { name: frozen, location: 'freezer', unit: 'bag', stock: 6, variantOf: freshItem.id });
+    await api(page, 'POST', '/api/items', { name: frozen, location: 'freezer', unit: 'bag', stock: 6, variantOf: freshItem.id });
     await recipe(page, dish, [[freshItem, 24]]);
 
     await page.goto('/');
@@ -298,7 +298,7 @@ test('a recipe stays ready to cook when only an optional ingredient is out', asy
 
 test('a household item is never offered for a recipe', async ({ page }) => {
     const soap = unique('Dish soap');
-    await api(page, 'POST', '/api/ingredients', { name: soap, location: 'household', unit: 'bottle', stock: 12 });
+    await api(page, 'POST', '/api/items', { name: soap, kind: 'household', location: 'pantry', unit: 'bottle', stock: 12 });
 
     await page.goto('/recipes/new');
     await page.getByTestId('picker-open').click();
@@ -340,7 +340,7 @@ test('a recipe is edited and then deleted', async ({ page }) => {
 
     await expect(page).toHaveURL(/\/recipes$/);
     await expect(card(page, renamed)).toHaveCount(0);
-    expect((await api(page, 'GET', '/api/ingredients')).map((item) => item.name)).toContain(first);
+    expect((await api(page, 'GET', '/api/items')).map((item) => item.name)).toContain(first);
 });
 
 test('a recipe name already taken is refused, ignoring case', async ({ page }) => {
@@ -416,15 +416,15 @@ test('an ingredient that a recipe uses cannot be deleted, and the message names 
     await recipe(page, name, [[item, 12]]);
 
     await goTo(page, 'Pantry');
-    await page.getByRole('searchbox', { name: 'Search or add an ingredient' }).fill(thyme);
+    await page.getByRole('searchbox', { name: 'Search or add an item' }).fill(thyme);
     await page.getByRole('button', { name: `${thyme} (edit)` }).click();
-    const sheet = page.getByRole('dialog', { name: 'Edit ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'Edit item' });
     await sheet.getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
 
     await expect(page.getByTestId('toast').filter({ hasText: `“${thyme}” cannot be deleted: it is used by ${name}.` })).toBeVisible();
     await expect(sheet).toBeVisible();
-    expect((await api(page, 'GET', '/api/ingredients')).map((entry) => entry.name)).toContain(thyme);
+    expect((await api(page, 'GET', '/api/items')).map((entry) => entry.name)).toContain(thyme);
 });
 
 test('older meals are loaded by thirty days', async ({ page }) => {

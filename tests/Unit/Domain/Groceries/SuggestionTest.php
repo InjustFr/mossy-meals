@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Domain\Groceries;
 
 use App\Domain\Groceries\Suggestion;
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Months;
-use App\Domain\Pantry\Quantity;
-use App\Domain\Pantry\Unit;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Kind;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Months;
+use App\Domain\Stock\Quantity;
+use App\Domain\Stock\Unit;
 use PHPUnit\Framework\TestCase;
 
 final class SuggestionTest extends TestCase
@@ -65,9 +66,9 @@ final class SuggestionTest extends TestCase
         self::assertFalse((new Suggestion([], 7))->suggests($sodas));
     }
 
-    private static function ingredient(string $name, int $stock): Ingredient
+    private static function ingredient(string $name, int $stock): Item
     {
-        $ingredient = Ingredient::add($name, Location::Fridge, Unit::Carton, false, null, new \DateTimeImmutable());
+        $ingredient = Item::add($name, Kind::Ingredient, Location::Fridge, Unit::Carton, false, null, new \DateTimeImmutable());
         $ingredient->setStock(Quantity::ofTwelfths($stock));
 
         return $ingredient;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Cooking;
 
-use App\Domain\Pantry\Ingredient;
+use App\Domain\Stock\Item;
 
 final readonly class VariantView
 {
@@ -17,7 +17,7 @@ final readonly class VariantView
     ) {
     }
 
-    public static function of(Ingredient $ingredient): self
+    public static function of(Item $ingredient): self
     {
         return new self((string) $ingredient->id(), $ingredient->name(), $ingredient->unit()->value, $ingredient->isManual(), $ingredient->stock()->twelfths());
     }

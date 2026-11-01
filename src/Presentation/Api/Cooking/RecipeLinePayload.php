@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Api\Cooking;
 
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\Quantity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 final readonly class RecipeLinePayload

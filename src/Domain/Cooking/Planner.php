@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Cooking;
 
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Quantity;
 
 final readonly class Planner
 {
@@ -58,7 +58,7 @@ final readonly class Planner
      * @param list<Recipe>        $preps
      * @param array<string, true> $visiting
      */
-    private function take(RecipeLine $line, array &$stock, array &$preps, array $visiting): ?Ingredient
+    private function take(RecipeLine $line, array &$stock, array &$preps, array $visiting): ?Item
     {
         $wanted = $line->ingredient();
         $amount = $line->amount();
@@ -128,7 +128,7 @@ final readonly class Planner
     /**
      * @param array<string, int> $stock
      */
-    private function covers(Ingredient $wanted, Ingredient $candidate, ?Quantity $amount, array $stock): bool
+    private function covers(Item $wanted, Item $candidate, ?Quantity $amount, array $stock): bool
     {
         $have = $this->stockOf($candidate, $stock);
 
@@ -138,7 +138,7 @@ final readonly class Planner
     /**
      * @param array<string, int> $stock
      */
-    private function consume(Ingredient $wanted, Ingredient $candidate, ?Quantity $amount, array &$stock): void
+    private function consume(Item $wanted, Item $candidate, ?Quantity $amount, array &$stock): void
     {
         if (null !== $amount && self::deducts($wanted, $candidate)) {
             $stock[(string) $candidate->id()] = $this->stockOf($candidate, $stock) - $amount->twelfths();
@@ -148,12 +148,12 @@ final readonly class Planner
     /**
      * @param array<string, int> $stock
      */
-    private function stockOf(Ingredient $ingredient, array $stock): int
+    private function stockOf(Item $ingredient, array $stock): int
     {
         return $stock[(string) $ingredient->id()] ?? $ingredient->stock()->twelfths();
     }
 
-    private static function deducts(Ingredient $wanted, Ingredient $candidate): bool
+    private static function deducts(Item $wanted, Item $candidate): bool
     {
         return !$candidate->isManual() && $candidate->unit() === $wanted->unit();
     }

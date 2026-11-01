@@ -1,15 +1,15 @@
 import { expect, test } from './support/test.js';
 import { signIn, unique } from './support/session.js';
 
-const row = (page, name) => page.getByTestId('ingredient-row').filter({ has: page.getByRole('button', { name: `${name} (edit)` }) });
+const row = (page, name) => page.getByTestId('item-row').filter({ has: page.getByRole('button', { name: `${name} (edit)` }) });
 const quantity = (page, name) => row(page, name).getByRole('button', { name: /^Set the stock of/ });
-const search = (page) => page.getByRole('searchbox', { name: 'Search or add an ingredient' });
+const search = (page) => page.getByRole('searchbox', { name: 'Search or add an item' });
 const place = (page, name) => page.getByRole('group', { name: 'Place' }).getByRole('button', { name });
 
-async function addIngredient(page, name, { location = 'Fridge', unit = null, empty = false } = {}) {
+async function addItem(page, name, { location = 'Fridge', unit = null, empty = false } = {}) {
     await search(page).fill(name);
     await page.getByRole('button', { name: `Add “${name}”` }).click();
-    const sheet = page.getByRole('dialog', { name: 'New ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'New item' });
     await expect(sheet.getByLabel('Name')).toHaveValue(name);
     await sheet.getByRole('button', { name: location }).click();
     if (unit) {
@@ -50,26 +50,48 @@ test('the running-low chip leads to the groceries', async ({ page }) => {
     await expect(page).toHaveURL(/\/groceries$/);
 });
 
-test('household supplies live at home, apart from the ingredients', async ({ page }) => {
+test('household items are a kind of their own and hide what only ingredients have', async ({ page }) => {
+    const ingredientOnly = ['Track by hand', 'Buy in', 'Variant of'];
     await place(page, 'Home').click();
     await expect(row(page, 'Toilet paper')).toContainText('Low');
     await expect(row(page, 'Milk')).toHaveCount(0);
 
     await row(page, 'Toilet paper').getByRole('button', { name: 'Toilet paper (edit)' }).click();
-    const sheet = page.getByRole('dialog', { name: 'Edit ingredient' });
+    let sheet = page.getByRole('dialog', { name: 'Edit item' });
+    const kind = sheet.getByRole('group', { name: 'What it is' });
+    await expect(kind.getByRole('button', { name: 'Household item' })).toHaveAttribute('data-state', 'on');
     await expect(sheet.getByRole('switch', { name: 'Stock alert' })).toBeVisible();
-    for (const field of ['Track by hand', 'Buy in', 'Variant of']) await expect(sheet.getByText(field, { exact: true })).toHaveCount(0);
+    for (const field of ingredientOnly) await expect(sheet.getByText(field, { exact: true })).toHaveCount(0);
+    await kind.getByRole('button', { name: 'Ingredient' }).click();
+    for (const field of ['Track by hand', 'Buy in']) await expect(sheet.getByText(field, { exact: true }).first()).toBeVisible();
     await page.keyboard.press('Escape');
 
     await place(page, 'Pantry').click();
     await expect(row(page, 'Toilet paper')).toHaveCount(0);
+
+    const name = unique('Sponges');
+    await search(page).fill(name);
+    await page.getByRole('button', { name: `Add “${name}”` }).click();
+    sheet = page.getByRole('dialog', { name: 'New item' });
+    await expect(sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Pantry' })).toHaveAttribute('data-state', 'on');
+    await sheet.getByRole('group', { name: 'What it is' }).getByRole('button', { name: 'Household item' }).click();
+    await expect(sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Home' })).toHaveAttribute('data-state', 'on');
+    for (const field of ingredientOnly) await expect(sheet.getByText(field, { exact: true })).toHaveCount(0);
+    await sheet.getByRole('group', { name: 'Where it lives' }).getByRole('button', { name: 'Pantry' }).click();
+    await sheet.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(sheet).toBeHidden();
+
+    await search(page).fill('');
+    await expect(row(page, name)).toBeVisible();
+    const saved = await page.evaluate(async (wanted) => (await (await fetch('/api/items')).json()).find((item) => item.name === wanted), name);
+    expect([saved.kind, saved.location, saved.manual, saved.variantOf]).toEqual(['household', 'pantry', true, null]);
 });
 
 test('an ingredient without a stock alert is never running low', async ({ page }) => {
     const name = unique('Pesto');
     await search(page).fill(name);
     await page.getByRole('button', { name: `Add “${name}”` }).click();
-    const sheet = page.getByRole('dialog', { name: 'New ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'New item' });
     await sheet.getByRole('button', { name: 'Less in stock' }).click();
     await sheet.getByRole('switch', { name: 'Stock alert' }).click();
     await expect(sheet.getByRole('group', { name: 'Running low at' })).toHaveCount(0);
@@ -83,7 +105,7 @@ test('an ingredient without a stock alert is never running low', async ({ page }
 
 test('rows that are out sit dimmed at the bottom of their place', async ({ page }) => {
     await place(page, 'Fridge').click();
-    const outs = await page.getByTestId('ingredient-row').evaluateAll((rows) => rows.map((element) => element.classList.contains('row--out')));
+    const outs = await page.getByTestId('item-row').evaluateAll((rows) => rows.map((element) => element.classList.contains('row--out')));
     expect(outs).toContain(true);
     expect(outs).toEqual([...outs].sort((a, b) => Number(a) - Number(b)));
 });
@@ -91,9 +113,9 @@ test('rows that are out sit dimmed at the bottom of their place', async ({ page 
 test('searching offers to add a new name, and the ingredient is created with the stock set in the sheet', async ({ page }) => {
     const name = unique('Leeks');
     await search(page).fill(name);
-    await expect(page.getByTestId('ingredient-row')).toHaveCount(0);
+    await expect(page.getByTestId('item-row')).toHaveCount(0);
     await page.getByRole('button', { name: `Add “${name}”` }).click();
-    const sheet = page.getByRole('dialog', { name: 'New ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'New item' });
     await expect(sheet.getByLabel('Name')).toHaveValue(name);
     await sheet.getByRole('button', { name: 'Fridge' }).click();
     await expect(sheet.getByRole('group', { name: 'Units in stock' })).toContainText('1');
@@ -113,7 +135,7 @@ test('searching offers to add a new name, and the ingredient is created with the
 
 test('an ingredient added with no stock is out', async ({ page }) => {
     const name = unique('Chives');
-    await addIngredient(page, name, { empty: true });
+    await addItem(page, name, { empty: true });
 
     await expect(row(page, name)).toContainText('Out');
     await expect(quantity(page, name)).toHaveText(/0$/);
@@ -121,7 +143,7 @@ test('an ingredient added with no stock is out', async ({ page }) => {
 
 test('editing an ingredient offers no stock to set', async ({ page }) => {
     await row(page, 'Milk').getByRole('button', { name: 'Milk (edit)' }).click();
-    const sheet = page.getByRole('dialog', { name: 'Edit ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'Edit item' });
 
     await expect(sheet.getByLabel('Name')).toHaveValue('Milk');
     await expect(sheet.getByRole('group', { name: 'Units in stock' })).toHaveCount(0);
@@ -129,7 +151,7 @@ test('editing an ingredient offers no stock to set', async ({ page }) => {
 
 test('two taps on plus are sent as one change and survive a reload', async ({ page }) => {
     const name = unique('Carrots');
-    await addIngredient(page, name, { empty: true });
+    await addItem(page, name, { empty: true });
     const adjustments = [];
     page.on('request', (request) => request.url().endsWith('/adjust') && adjustments.push(request.postDataJSON()));
 
@@ -152,7 +174,7 @@ test('two taps on plus are sent as one change and survive a reload', async ({ pa
 
 test('the minus never goes below zero', async ({ page }) => {
     const name = unique('Lemons');
-    await addIngredient(page, name, { empty: true });
+    await addItem(page, name, { empty: true });
 
     await expect(row(page, name).getByRole('button', { name: `One less ${name}` })).toBeDisabled();
     await row(page, name).getByRole('button', { name: `One more ${name}` }).click();
@@ -164,7 +186,7 @@ test('the minus never goes below zero', async ({ page }) => {
 
 test('a fraction chip sets the stock to three quarters of a container', async ({ page }) => {
     const name = unique('Cream');
-    await addIngredient(page, name, { unit: 'Carton', empty: true });
+    await addItem(page, name, { unit: 'Carton', empty: true });
 
     await quantity(page, name).click();
     const sheet = page.getByRole('dialog', { name: `How much ${name}?` });
@@ -188,10 +210,10 @@ test('a fraction chip sets the stock to three quarters of a container', async ({
 test('an ingredient is renamed and moved to the freezer', async ({ page }) => {
     const name = unique('Berries');
     const renamed = unique('Frozen berries');
-    await addIngredient(page, name);
+    await addItem(page, name);
 
     await row(page, name).getByRole('button', { name: `${name} (edit)` }).click();
-    const sheet = page.getByRole('dialog', { name: 'Edit ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'Edit item' });
     await expect(sheet.getByLabel('Name')).toHaveValue(name);
     await sheet.getByLabel('Name').fill(renamed);
     await sheet.getByRole('button', { name: 'Freezer' }).click();
@@ -208,11 +230,11 @@ test('an ingredient is renamed and moved to the freezer', async ({ page }) => {
 test('an ingredient is made a variant of another and bought only in some months', async ({ page }) => {
     const main = unique('Zucchini');
     const variant = unique('Frozen zucchini');
-    await addIngredient(page, main);
-    await addIngredient(page, variant, { location: 'Freezer' });
+    await addItem(page, main);
+    await addItem(page, variant, { location: 'Freezer' });
 
     await row(page, variant).getByRole('button', { name: `${variant} (edit)` }).click();
-    const sheet = page.getByRole('dialog', { name: 'Edit ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'Edit item' });
     await sheet.getByRole('combobox', { name: 'Variant of' }).click();
     await page.getByRole('option', { name: main }).click();
     await sheet.getByTestId('never').click();
@@ -220,24 +242,24 @@ test('an ingredient is made a variant of another and bought only in some months'
     await sheet.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(sheet).toBeHidden();
 
-    const saved = await page.evaluate(async (name) => (await (await fetch('/api/ingredients')).json()).find((item) => item.name === name), variant);
-    const mainId = await page.evaluate(async (name) => (await (await fetch('/api/ingredients')).json()).find((item) => item.name === name).id, main);
+    const saved = await page.evaluate(async (name) => (await (await fetch('/api/items')).json()).find((item) => item.name === name), variant);
+    const mainId = await page.evaluate(async (name) => (await (await fetch('/api/items')).json()).find((item) => item.name === name).id, main);
     expect([saved.variantOf, saved.months]).toEqual([mainId, [1]]);
 });
 
 test('a name already taken is refused, ignoring case', async ({ page }) => {
     const name = unique('Basil');
-    await addIngredient(page, name);
+    await addItem(page, name);
 
     await search(page).fill(name.toUpperCase());
     await expect(row(page, name)).toBeVisible();
     await expect(page.getByRole('button', { name: /^Add “/ })).toHaveCount(0);
 
     await row(page, name).getByRole('button', { name: `${name} (edit)` }).click();
-    const sheet = page.getByRole('dialog', { name: 'Edit ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'Edit item' });
     await sheet.getByLabel('Name').fill('MILK');
     await sheet.getByRole('button', { name: 'Save', exact: true }).click();
-    await expect(sheet.getByRole('alert')).toHaveText('There is already an ingredient called “MILK”.');
+    await expect(sheet.getByRole('alert')).toHaveText('There is already an item called “MILK”.');
     await expect(sheet).toBeVisible();
 });
 
@@ -246,7 +268,7 @@ test('save and add another keeps the sheet open for the next ingredient', async 
     const second = unique('Sage');
     await search(page).fill(first);
     await page.getByRole('button', { name: `Add “${first}”` }).click();
-    const sheet = page.getByRole('dialog', { name: 'New ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'New item' });
     await sheet.getByRole('button', { name: 'Save & add another' }).click();
     await expect(sheet.getByLabel('Name')).toHaveValue('');
     await expect(sheet.getByLabel('Name')).toBeFocused();
@@ -261,10 +283,10 @@ test('save and add another keeps the sheet open for the next ingredient', async 
 
 test('an ingredient is deleted after a confirmation', async ({ page }) => {
     const name = unique('Parsley');
-    await addIngredient(page, name);
+    await addItem(page, name);
 
     await row(page, name).getByRole('button', { name: `${name} (edit)` }).click();
-    await page.getByRole('dialog', { name: 'Edit ingredient' }).getByRole('button', { name: 'Delete' }).click();
+    await page.getByRole('dialog', { name: 'Edit item' }).getByRole('button', { name: 'Delete' }).click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toContainText(`Delete ${name}?`);
     await confirmation.getByRole('button', { name: 'Delete' }).click();

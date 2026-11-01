@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Cooking;
 
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Quantity;
 
 final readonly class RecipeOutputView
 {
@@ -18,7 +18,7 @@ final readonly class RecipeOutputView
     ) {
     }
 
-    public static function of(Ingredient $ingredient, Quantity $yield): self
+    public static function of(Item $ingredient, Quantity $yield): self
     {
         return new self((string) $ingredient->id(), $ingredient->name(), $ingredient->unit()->value, $yield->twelfths(), $ingredient->stock()->twelfths());
     }

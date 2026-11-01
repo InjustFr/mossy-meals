@@ -36,7 +36,7 @@
     --location-fridge: oklch(0.92 0.05 165);
     --location-freezer: oklch(0.92 0.045 235);
     --location-pantry: oklch(0.92 0.075 85);
-    --location-household: oklch(0.92 0.045 310);
+    --location-home: oklch(0.92 0.045 310);
 
     --radius: 1rem;
     --radius-lg: 1.5rem;

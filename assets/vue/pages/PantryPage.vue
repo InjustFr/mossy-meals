@@ -3,8 +3,8 @@ import { computed, reactive, ref } from 'vue';
 import { PhCarrot, PhMagnifyingGlass, PhPlus, PhShoppingCart } from '@phosphor-icons/vue';
 import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import IngredientRow from '../components/pantry/IngredientRow.vue';
-import IngredientSheet from '../components/pantry/IngredientSheet.vue';
+import ItemRow from '../components/pantry/ItemRow.vue';
+import ItemSheet from '../components/pantry/ItemSheet.vue';
 import StockSheet from '../components/pantry/StockSheet.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import ChipGroup from '../components/ui/ChipGroup.vue';
@@ -19,17 +19,17 @@ const { t } = useI18n();
 const api = useApi();
 const adjustments = useStockAdjustments();
 
-const ingredients = ref([]);
-api.load('/api/ingredients', ingredients);
+const items = ref([]);
+api.load('/api/items', items);
 
 const place = ref('all');
 const query = ref('');
-const ingredientSheet = reactive({ open: false, ingredient: null, name: '' });
-const stockSheet = reactive({ open: false, ingredient: null });
+const itemSheet = reactive({ open: false, item: null, name: '' });
+const stockSheet = reactive({ open: false, item: null });
 
 const placeOptions = computed(() => ['all', ...LOCATIONS].map((value) => ({ value, label: t(`pantry.location.${value}`), icon: LOCATION_ICONS[value] })));
-const rows = computed(() => ingredients.value.map(adjustments.view));
-const runningLow = computed(() => ingredients.value.filter((ingredient) => ingredient.suggested).length);
+const rows = computed(() => items.value.map(adjustments.view));
+const runningLow = computed(() => items.value.filter((item) => item.suggested).length);
 const needle = computed(() => query.value.trim().toLowerCase());
 const matches = computed(() => rows.value.filter((row) => (needle.value ? row.name.toLowerCase().includes(needle.value) : place.value === 'all' || row.location === place.value)));
 const canAdd = computed(() => needle.value !== '' && !rows.value.some((row) => row.name.toLowerCase() === needle.value));
@@ -40,15 +40,15 @@ const groups = computed(() => {
 });
 
 function addNamed() {
-    Object.assign(ingredientSheet, { open: true, ingredient: null, name: query.value.trim() });
+    Object.assign(itemSheet, { open: true, item: null, name: query.value.trim() });
 }
 
 function edit(row) {
-    Object.assign(ingredientSheet, { open: true, ingredient: row, name: '' });
+    Object.assign(itemSheet, { open: true, item: row, name: '' });
 }
 
 function setStock(row) {
-    Object.assign(stockSheet, { open: true, ingredient: row });
+    Object.assign(stockSheet, { open: true, item: row });
 }
 </script>
 
@@ -74,12 +74,12 @@ function setStock(row) {
 
         <PageSection v-for="group in groups" :key="group.location" :title="t(`pantry.location.${group.location}`)" :count="group.rows.length">
             <ul class="pantry__list">
-                <IngredientRow v-for="row in group.rows" :key="row.id" :ingredient="row" @edit="edit(row)" @stock="setStock(row)" @move="(to) => adjustments.move(row.id, row.stock, to)" />
+                <ItemRow v-for="row in group.rows" :key="row.id" :item="row" @edit="edit(row)" @stock="setStock(row)" @move="(to) => adjustments.move(row.id, row.stock, to)" />
             </ul>
         </PageSection>
 
-        <IngredientSheet v-model:open="ingredientSheet.open" :ingredient="ingredientSheet.ingredient" :initial-name="ingredientSheet.name" :initial-location="place === 'all' ? 'pantry' : place" :ingredients="ingredients" />
-        <StockSheet v-model:open="stockSheet.open" :ingredient="stockSheet.ingredient" />
+        <ItemSheet v-model:open="itemSheet.open" :item="itemSheet.item" :initial-name="itemSheet.name" :initial-location="place === 'all' ? 'pantry' : place" :items="items" />
+        <StockSheet v-model:open="stockSheet.open" :item="stockSheet.item" />
     </div>
 </template>
 

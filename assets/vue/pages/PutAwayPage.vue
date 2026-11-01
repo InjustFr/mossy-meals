@@ -5,15 +5,14 @@ import { PhCaretDown, PhCaretUp, PhShoppingBag } from '@phosphor-icons/vue';
 import { useI18n } from 'vue-i18n';
 import BoughtRow from '../components/groceries/BoughtRow.vue';
 import TickRow from '../components/groceries/TickRow.vue';
-import IngredientPicker from '../components/pantry/IngredientPicker.vue';
+import ItemPicker from '../components/pantry/ItemPicker.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import EmptyState from '../components/ui/EmptyState.vue';
 import PageHeader from '../components/ui/PageHeader.vue';
 import PageSection from '../components/ui/PageSection.vue';
 import { useApi } from '../composables/useApi.js';
 import { useToast } from '../composables/useToast.js';
-import { usedOf } from '../cooking/lines.js';
-import { boughtLine, groupByLocation } from '../groceries/lists.js';
+import { boughtLine, boughtOf, groupByLocation } from '../groceries/lists.js';
 
 const { t } = useI18n();
 const api = useApi();
@@ -35,19 +34,19 @@ watch(list, (current) => {
         started.value = false;
         if (route.name === 'put-away') router.replace('/groceries');
     } else if (current) {
-        const listed = lines.value.map((line) => line.ingredientId);
-        lines.value = [...lines.value, ...current.items.filter((item) => item.ticked && !listed.includes(item.ingredientId)).map(boughtLine)];
+        const listed = lines.value.map((line) => line.itemId);
+        lines.value = [...lines.value, ...current.items.filter((item) => item.ticked && !listed.includes(item.itemId)).map(boughtLine)];
         started.value = true;
     }
 }, { immediate: true });
 
-const bought = computed(() => lines.value.map((line) => line.ingredientId));
-const unbought = computed(() => (list.value?.items ?? []).filter((item) => !bought.value.includes(item.ingredientId)));
+const bought = computed(() => lines.value.map((line) => line.itemId));
+const unbought = computed(() => (list.value?.items ?? []).filter((item) => !bought.value.includes(item.itemId)));
 const groups = computed(() => groupByLocation(lines.value));
-const known = computed(() => [...bought.value, ...unbought.value.map((item) => item.ingredientId)]);
+const known = computed(() => [...bought.value, ...unbought.value.map((item) => item.itemId)]);
 
-function setAmount(ingredientId, amount) {
-    lines.value = lines.value.map((line) => (line.ingredientId === ingredientId ? { ...line, amount } : line));
+function setAmount(itemId, amount) {
+    lines.value = lines.value.map((line) => (line.itemId === itemId ? { ...line, amount } : line));
 }
 
 function include(source) {
@@ -56,7 +55,7 @@ function include(source) {
 
 async function done() {
     saving.value = true;
-    await toast.attempt(() => api.post('/api/grocery-list/put-away', { bought: usedOf(lines.value) }), t('groceries.putAway.toast'));
+    await toast.attempt(() => api.post('/api/grocery-list/put-away', { bought: boughtOf(lines.value) }), t('groceries.putAway.toast'));
     saving.value = false;
 }
 </script>
@@ -74,7 +73,7 @@ async function done() {
 
             <PageSection v-for="group in groups" :key="group.location" :title="t(`pantry.location.${group.location}`)" :count="group.rows.length">
                 <ul class="put-away__list">
-                    <BoughtRow v-for="line in group.rows" :key="line.ingredientId" :line="line" @change="(amount) => setAmount(line.ingredientId, amount)" />
+                    <BoughtRow v-for="line in group.rows" :key="line.itemId" :line="line" @change="(amount) => setAmount(line.itemId, amount)" />
                 </ul>
             </PageSection>
 
@@ -93,7 +92,7 @@ async function done() {
                 </template>
             </section>
 
-            <IngredientPicker :exclude="known" :label="t('groceries.putAway.add')" :initial-stock="0" @pick="include" />
+            <ItemPicker :exclude="known" :label="t('groceries.putAway.add')" :initial-stock="0" @pick="include" />
 
             <BaseButton class="put-away__done" :loading="saving" data-test="put-away-done" @click="done">{{ t('groceries.putAway.done') }}</BaseButton>
         </template>

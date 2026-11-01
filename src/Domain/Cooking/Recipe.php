@@ -11,8 +11,8 @@ use App\Domain\Cooking\Exception\NotFood;
 use App\Domain\Cooking\Exception\RecipeNameTooLong;
 use App\Domain\Cooking\Exception\RecipeNeedsIngredient;
 use App\Domain\Cooking\Exception\ZeroYield;
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Quantity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -32,9 +32,9 @@ class Recipe
     #[ORM\Column(length: self::MAX_NAME_LENGTH)]
     private string $name;
 
-    #[ORM\ManyToOne(targetEntity: Ingredient::class)]
+    #[ORM\ManyToOne(targetEntity: Item::class)]
     #[ORM\JoinColumn(nullable: true)]
-    private ?Ingredient $output;
+    private ?Item $output;
 
     #[ORM\Column(nullable: true)]
     private ?int $yieldTwelfths;
@@ -50,7 +50,7 @@ class Recipe
     /**
      * @param list<Need> $needs
      */
-    private function __construct(string $name, array $needs, ?Ingredient $output, ?Quantity $yield, \DateTimeImmutable $now)
+    private function __construct(string $name, array $needs, ?Item $output, ?Quantity $yield, \DateTimeImmutable $now)
     {
         $this->id = new Ulid();
         $this->name = self::validName($name);
@@ -72,7 +72,7 @@ class Recipe
     /**
      * @param list<Need> $needs
      */
-    public static function prep(string $name, array $needs, Ingredient $output, Quantity $yield, \DateTimeImmutable $now): self
+    public static function prep(string $name, array $needs, Item $output, Quantity $yield, \DateTimeImmutable $now): self
     {
         return new self($name, $needs, $output, $yield, $now);
     }
@@ -80,7 +80,7 @@ class Recipe
     /**
      * @param list<Need> $needs
      */
-    public function rewrite(string $name, array $needs, ?Ingredient $output, ?Quantity $yield): void
+    public function rewrite(string $name, array $needs, ?Item $output, ?Quantity $yield): void
     {
         $name = self::validName($name);
         $output = self::validOutput($output);
@@ -125,7 +125,7 @@ class Recipe
         return $this->name;
     }
 
-    public function output(): ?Ingredient
+    public function output(): ?Item
     {
         return $this->output;
     }
@@ -202,7 +202,7 @@ class Recipe
         return $name;
     }
 
-    private static function validOutput(?Ingredient $output): ?Ingredient
+    private static function validOutput(?Item $output): ?Item
     {
         if (null !== $output && $output->isHousehold()) {
             throw new NotFood($output->name());

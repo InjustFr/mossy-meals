@@ -12,9 +12,9 @@ const { t } = useI18n();
 const api = useApi();
 
 const list = ref(undefined);
-const ingredients = ref([]);
+const items = ref([]);
 api.load('/api/grocery-list', list);
-api.load('/api/ingredients', ingredients);
+api.load('/api/items', items);
 
 const subtitle = computed(() => (list.value ? t('groceries.shop.startedBy', { name: list.value.startedBy.name }) : null));
 </script>
@@ -25,6 +25,6 @@ const subtitle = computed(() => (list.value ? t('groceries.shop.startedBy', { na
             <BaseButton to="/pantry" variant="ghost" data-test="close-groceries"><PhX size="1.125rem" weight="bold" aria-hidden="true" />{{ t('groceries.close') }}</BaseButton>
         </PageHeader>
         <GroceryShop v-if="list" :list="list" />
-        <GroceryPrepare v-else-if="list === null" :ingredients="ingredients" />
+        <GroceryPrepare v-else-if="list === null" :items="items" />
     </div>
 </template>

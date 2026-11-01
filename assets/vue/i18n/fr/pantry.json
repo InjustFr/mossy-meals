@@ -1,16 +1,20 @@
 {
     "empty": {
         "title": "Les étagères sont vides",
-        "hint": "Tout ce qu’il y a dans le frigo, le congélateur et le placard sera listé ici. Tapez un nom ci-dessus pour ajouter le premier ingrédient."
+        "hint": "Tout ce qu’il y a dans le frigo, le congélateur et le placard sera listé ici. Tapez un nom ci-dessus pour ajouter le premier article."
     },
     "noMatch": {
         "title": "Rien ici",
-        "hint": "Aucun ingrédient ne correspond. Essayez un autre endroit ou un autre nom."
+        "hint": "Aucun article ne correspond. Essayez un autre endroit ou un autre nom."
     },
     "search": {
-        "label": "Chercher ou ajouter un ingrédient",
-        "placeholder": "Chercher ou ajouter un ingrédient",
+        "label": "Chercher ou ajouter un article",
+        "placeholder": "Chercher ou ajouter un article",
         "add": "Ajouter « {name} »"
+    },
+    "kind": {
+        "ingredient": "Ingrédient",
+        "household": "Article de maison"
     },
     "location": {
         "label": "Endroit",
@@ -18,18 +22,25 @@
         "fridge": "Frigo",
         "freezer": "Congélo",
         "pantry": "Placard",
-        "household": "Maison"
+        "home": "Maison"
     },
     "badge": {
         "out": "Fini",
         "low": "Bientôt fini"
     },
     "picker": {
-        "add": "Ajouter un ingrédient",
-        "search": "Chercher un ingrédient",
+        "items": {
+            "add": "Ajouter un article",
+            "search": "Chercher un article",
+            "none": "Aucun article ne correspond"
+        },
+        "ingredients": {
+            "add": "Ajouter un ingrédient",
+            "search": "Chercher un ingrédient",
+            "none": "Aucun ingrédient ne correspond"
+        },
         "close": "Fermer la recherche",
         "left": "{amount} en stock",
-        "none": "Aucun ingrédient ne correspond",
         "create": "Ajouter « {name} »"
     },
     "row": {
@@ -48,9 +59,11 @@
         "save": "Régler le stock"
     },
     "sheet": {
-        "createTitle": "Nouvel ingrédient",
-        "editTitle": "Modifier l’ingrédient",
+        "createTitle": "Nouvel article",
+        "createIngredientTitle": "Nouvel ingrédient",
+        "editTitle": "Modifier l’article",
         "name": "Nom",
+        "kind": "Ce que c’est",
         "location": "Où il se range",
         "unit": "Compté en",
         "stock": "Combien en avez-vous ?",
@@ -70,7 +83,7 @@
         "added": "{name} ajouté",
         "delete": "Supprimer",
         "deleteTitle": "Supprimer {name} ?",
-        "deleteMessage": "L’ingrédient et son stock sont supprimés. Cette action est définitive.",
+        "deleteMessage": "L’article et son stock sont supprimés. Cette action est définitive.",
         "months": "À acheter en",
         "monthsHint": "Proposé pour les courses seulement pendant ces mois. Aucun mois : jamais.",
         "allYear": "Toute l’année",
@@ -80,5 +93,5 @@
         "noVariant": "Aucun, c’est un ingrédient à part"
     },
     "groceries": "Faire les courses",
-    "low": "{count} ingrédient bientôt fini | {count} ingrédients bientôt finis"
+    "low": "{count} article bientôt fini | {count} articles bientôt finis"
 }

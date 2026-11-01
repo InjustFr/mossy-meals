@@ -22,11 +22,11 @@ final class SameOriginGuardTest extends WebTestCase
     {
         $client = self::signedInClient();
 
-        $client->jsonRequest('POST', '/api/ingredients', self::INGREDIENT, $headers);
+        $client->jsonRequest('POST', '/api/items', self::INGREDIENT, $headers);
 
         self::assertResponseStatusCodeSame(403);
         self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
-        $client->jsonRequest('GET', '/api/ingredients');
+        $client->jsonRequest('GET', '/api/items');
         self::assertSame('[]', $client->getResponse()->getContent());
     }
 
@@ -51,8 +51,8 @@ final class SameOriginGuardTest extends WebTestCase
     /** @return iterable<array{string}> */
     public static function encodedApiPaths(): iterable
     {
-        yield 'encoded letter' => ['/%61pi/ingredients'];
-        yield 'encoded slash' => ['/api%2Fingredients'];
+        yield 'encoded letter' => ['/%61pi/items'];
+        yield 'encoded slash' => ['/api%2Fitems'];
     }
 
     /**
@@ -63,7 +63,7 @@ final class SameOriginGuardTest extends WebTestCase
     {
         $client = self::signedInClient();
 
-        $client->jsonRequest('POST', '/api/ingredients', self::INGREDIENT, $headers);
+        $client->jsonRequest('POST', '/api/items', self::INGREDIENT, $headers);
 
         self::assertResponseStatusCodeSame(201);
     }
@@ -79,9 +79,9 @@ final class SameOriginGuardTest extends WebTestCase
     public function testCrossSiteStockAdjustmentsAreForbidden(): void
     {
         $client = self::signedInClient();
-        $client->jsonRequest('POST', '/api/ingredients', self::INGREDIENT);
+        $client->jsonRequest('POST', '/api/items', self::INGREDIENT);
 
-        $client->jsonRequest('POST', '/api/ingredients/01JAAAAAAAAAAAAAAAAAAAAAAA/adjust', ['by' => 1], ['HTTP_SEC_FETCH_SITE' => 'cross-site']);
+        $client->jsonRequest('POST', '/api/items/01JAAAAAAAAAAAAAAAAAAAAAAA/adjust', ['by' => 1], ['HTTP_SEC_FETCH_SITE' => 'cross-site']);
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -90,7 +90,7 @@ final class SameOriginGuardTest extends WebTestCase
     {
         $client = self::signedInClient();
 
-        $client->jsonRequest('GET', '/api/ingredients', server: ['HTTP_SEC_FETCH_SITE' => 'cross-site']);
+        $client->jsonRequest('GET', '/api/items', server: ['HTTP_SEC_FETCH_SITE' => 'cross-site']);
 
         self::assertResponseIsSuccessful();
     }

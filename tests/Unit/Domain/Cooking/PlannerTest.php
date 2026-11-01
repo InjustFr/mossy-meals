@@ -8,10 +8,11 @@ use App\Domain\Cooking\Need;
 use App\Domain\Cooking\Planner;
 use App\Domain\Cooking\Recipe;
 use App\Domain\Cooking\RecipeLine;
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Quantity;
-use App\Domain\Pantry\Unit;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Kind;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Quantity;
+use App\Domain\Stock\Unit;
 use PHPUnit\Framework\TestCase;
 
 final class PlannerTest extends TestCase
@@ -228,7 +229,7 @@ final class PlannerTest extends TestCase
     }
 
     /**
-     * @param list<array{0: Ingredient, 1: ?int, 2?: bool}> $lines
+     * @param list<array{0: Item, 1: ?int, 2?: bool}> $lines
      */
     private static function meal(string $name, array $lines): Recipe
     {
@@ -236,15 +237,15 @@ final class PlannerTest extends TestCase
     }
 
     /**
-     * @param list<array{0: Ingredient, 1: ?int, 2?: bool}> $lines
+     * @param list<array{0: Item, 1: ?int, 2?: bool}> $lines
      */
-    private static function prep(string $name, array $lines, Ingredient $output, int $yield): Recipe
+    private static function prep(string $name, array $lines, Item $output, int $yield): Recipe
     {
         return Recipe::prep($name, self::needs($lines), $output, Quantity::ofTwelfths($yield), new \DateTimeImmutable());
     }
 
     /**
-     * @param list<array{0: Ingredient, 1: ?int, 2?: bool}> $lines
+     * @param list<array{0: Item, 1: ?int, 2?: bool}> $lines
      *
      * @return list<Need>
      */
@@ -263,9 +264,9 @@ final class PlannerTest extends TestCase
         return array_map(static fn (RecipeLine $line): string => $line->ingredient()->name(), $lines);
     }
 
-    private static function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): Ingredient
+    private static function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): Item
     {
-        $ingredient = Ingredient::add($name, Location::Pantry, $unit, $manual, null, new \DateTimeImmutable());
+        $ingredient = Item::add($name, Kind::Ingredient, Location::Pantry, $unit, $manual, null, new \DateTimeImmutable());
         $ingredient->setStock(Quantity::ofTwelfths($stock));
 
         return $ingredient;

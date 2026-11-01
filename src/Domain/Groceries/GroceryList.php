@@ -7,8 +7,8 @@ namespace App\Domain\Groceries;
 use App\Domain\Cooking\Portion;
 use App\Domain\Groceries\Exception\EmptyGroceryList;
 use App\Domain\Identity\User;
-use App\Domain\Pantry\Ingredient;
 use App\Domain\Shared\Exception\NotFound;
+use App\Domain\Stock\Item;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -38,11 +38,11 @@ class GroceryList
     private Collection $items;
 
     /**
-     * @param list<Ingredient> $ingredients
+     * @param list<Item> $items
      */
-    public function __construct(array $ingredients, User $startedBy, \DateTimeImmutable $now)
+    public function __construct(array $items, User $startedBy, \DateTimeImmutable $now)
     {
-        if ([] === $ingredients) {
+        if ([] === $items) {
             throw new EmptyGroceryList();
         }
 
@@ -50,20 +50,20 @@ class GroceryList
         $this->startedBy = $startedBy;
         $this->startedAt = $now;
         $this->items = new ArrayCollection();
-        foreach ($ingredients as $ingredient) {
-            $this->add($ingredient);
+        foreach ($items as $item) {
+            $this->add($item);
         }
     }
 
-    public function add(Ingredient $ingredient): void
+    public function add(Item $item): void
     {
-        foreach ($this->items as $item) {
-            if ($item->ingredient()->id()->equals($ingredient->id())) {
+        foreach ($this->items as $listed) {
+            if ($listed->item()->id()->equals($item->id())) {
                 return;
             }
         }
 
-        $this->items->add(new GroceryItem($this, $ingredient));
+        $this->items->add(new GroceryItem($this, $item));
     }
 
     public function tick(Ulid $itemId, bool $ticked): void

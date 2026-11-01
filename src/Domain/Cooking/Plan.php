@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domain\Cooking;
 
-use App\Domain\Pantry\Ingredient;
+use App\Domain\Stock\Item;
 
 final readonly class Plan
 {
     /**
-     * @param array<string, Ingredient> $uses
-     * @param array<string, true>       $waiting
-     * @param list<RecipeLine>          $missing
-     * @param list<Recipe>              $preps
+     * @param array<string, Item> $uses
+     * @param array<string, true> $waiting
+     * @param list<RecipeLine>    $missing
+     * @param list<Recipe>        $preps
      */
     public function __construct(
         private array $uses,
@@ -22,7 +22,7 @@ final readonly class Plan
     ) {
     }
 
-    public function uses(RecipeLine $line): ?Ingredient
+    public function uses(RecipeLine $line): ?Item
     {
         return $this->uses[(string) $line->ingredient()->id()] ?? null;
     }

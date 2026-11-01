@@ -135,7 +135,7 @@ final class MealApiTest extends WebTestCase
         foreach ([
             ['DELETE', '/api/meals/'.self::UNKNOWN.'?giveBack=1', [], 'This meal no longer exists.'],
             ['POST', '/api/meals', self::meal($louis, ['eaterIds' => [self::UNKNOWN]]), 'This person no longer exists.'],
-            ['POST', '/api/meals', self::meal($louis, ['used' => [['ingredientId' => self::UNKNOWN, 'amount' => 12]]]), 'This ingredient no longer exists.'],
+            ['POST', '/api/meals', self::meal($louis, ['used' => [['ingredientId' => self::UNKNOWN, 'amount' => 12]]]), 'This item no longer exists.'],
         ] as [$method, $path, $payload, $message]) {
             $client->jsonRequest($method, $path, $payload);
             self::assertResponseStatusCodeSame(404, "$method $path");
@@ -266,7 +266,7 @@ final class MealApiTest extends WebTestCase
 
     private static function ingredient(KernelBrowser $client, string $name, int $stock, string $unit = 'piece', bool $manual = false): string
     {
-        $client->jsonRequest('POST', '/api/ingredients', ['name' => $name, 'location' => 'pantry', 'unit' => $unit, 'manual' => $manual, 'stock' => $stock]);
+        $client->jsonRequest('POST', '/api/items', ['name' => $name, 'location' => 'pantry', 'unit' => $unit, 'manual' => $manual, 'stock' => $stock]);
         self::assertResponseStatusCodeSame(201);
 
         return Json::string(self::body($client), 'id');
@@ -277,7 +277,7 @@ final class MealApiTest extends WebTestCase
      */
     private static function stocks(KernelBrowser $client): array
     {
-        $client->jsonRequest('GET', '/api/ingredients');
+        $client->jsonRequest('GET', '/api/items');
 
         return array_values(array_map(static fn (mixed $ingredient): int => Json::int($ingredient, 'stock'), self::body($client)));
     }

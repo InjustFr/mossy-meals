@@ -24,7 +24,7 @@ final readonly class GroceryListView
 
     public static function of(GroceryList $list): self
     {
-        $items = Alphabetical::sort($list->items(), static fn (GroceryItem $item): string => $item->ingredient()->name(), static fn (GroceryItem $item): string => (string) $item->id());
+        $items = Alphabetical::sort($list->items(), static fn (GroceryItem $item): string => $item->item()->name(), static fn (GroceryItem $item): string => (string) $item->id());
 
         return new self(
             (string) $list->id(),

@@ -13,12 +13,12 @@ async function api(page, method, url, body) {
     }, { method, url, body });
 }
 
-const ingredient = (page, name, { stock = 12, unit = 'piece', location = 'pantry' } = {}) => api(page, 'POST', '/api/ingredients', { name, location, unit, manual: false, stock });
+const ingredient = (page, name, { stock = 12, unit = 'piece', location = 'pantry' } = {}) => api(page, 'POST', '/api/items', { name, location, unit, manual: false, stock });
 async function goToGroceries(page) {
     await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Pantry' }).click();
     await page.getByTestId('go-shopping').click();
 }
-const stockOf = async (page, name) => (await api(page, 'GET', '/api/ingredients')).find((item) => item.name === name).stock;
+const stockOf = async (page, name) => (await api(page, 'GET', '/api/items')).find((item) => item.name === name).stock;
 const row = (page, name) => page.getByTestId('tick-row').filter({ hasText: name });
 const group = (page, title) => page.locator('section').filter({ has: page.getByRole('heading', { level: 2, name: new RegExp(`^${title}`) }) });
 const line = (page, name) => page.getByTestId('bought-line').filter({ hasText: name });
@@ -48,7 +48,7 @@ test('what is running low is suggested, out of stock first, and a homemade ingre
     for (const text of await page.getByTestId('tick-row').all()) await expect(text).toHaveAttribute('aria-checked', 'true');
 
     expect(position('Seitan')).toBe(-1);
-    const seitan = (await api(page, 'GET', '/api/ingredients')).find((item) => item.name === 'Seitan');
+    const seitan = (await api(page, 'GET', '/api/items')).find((item) => item.name === 'Seitan');
     expect([seitan.stock, seitan.homemade, seitan.suggested]).toEqual([0, true, false]);
 
 });
@@ -56,7 +56,7 @@ test('what is running low is suggested, out of stock first, and a homemade ingre
 test('an ingredient bought in no month is never suggested', async ({ page }) => {
     const sodas = unique('Sodas');
     const item = await ingredient(page, sodas, { stock: 0 });
-    await api(page, 'PUT', `/api/ingredients/${item.id}`, { name: sodas, location: 'pantry', unit: 'piece', months: [] });
+    await api(page, 'PUT', `/api/items/${item.id}`, { name: sodas, location: 'pantry', unit: 'piece', months: [] });
 
     await goToGroceries(page);
 
@@ -82,7 +82,7 @@ test('the groceries open from the pantry and close without losing the choices', 
 });
 
 test('the Pantry page counts the suggested ingredients', async ({ page }) => {
-    const suggested = (await api(page, 'GET', '/api/ingredients')).filter((item) => item.suggested).length;
+    const suggested = (await api(page, 'GET', '/api/items')).filter((item) => item.suggested).length;
     await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Pantry' }).click();
 
     await expect(page.getByTestId('running-low')).toHaveText(`${suggested} running low`);
@@ -95,7 +95,7 @@ test('a shopping trip is prepared, shared between two phones and put away with a
     await ingredient(page, milk, { stock: 3, unit: 'carton', location: 'fridge' });
     await ingredient(page, oats, { stock: 0, unit: 'bag' });
     await ingredient(page, chives, { stock: 24, location: 'fridge' });
-    const demoStocks = (await api(page, 'GET', '/api/ingredients')).filter((item) => ['Yoghurt', 'Cheddar', 'Leeks', 'Rice'].includes(item.name)).map((item) => [item.name, item.stock]);
+    const demoStocks = (await api(page, 'GET', '/api/items')).filter((item) => ['Yoghurt', 'Cheddar', 'Leeks', 'Rice'].includes(item.name)).map((item) => [item.name, item.stock]);
 
     await goToGroceries(page);
     await expect(row(page, milk)).toHaveAttribute('aria-checked', 'true');
@@ -103,7 +103,7 @@ test('a shopping trip is prepared, shared between two phones and put away with a
     await row(page, 'Leeks').click();
     await expect(row(page, 'Leeks')).toHaveAttribute('aria-checked', 'false');
     await page.getByTestId('picker-open').click();
-    await page.getByRole('searchbox', { name: 'Search ingredients' }).fill(chives);
+    await page.getByRole('searchbox', { name: 'Search items' }).fill(chives);
     await page.getByTestId('picker-option').filter({ hasText: chives }).click();
     await expect(row(page, chives)).toHaveAttribute('aria-checked', 'true');
     await row(page, chives).click();
@@ -156,7 +156,7 @@ test('a shopping trip is prepared, shared between two phones and put away with a
     await expect(row(page, 'Yoghurt')).toHaveAttribute('aria-checked', 'false');
 
     await page.getByTestId('picker-open').click();
-    await page.getByRole('searchbox', { name: 'Search ingredients' }).fill(chives);
+    await page.getByRole('searchbox', { name: 'Search items' }).fill(chives);
     await page.getByTestId('picker-option').filter({ hasText: chives }).click();
     await expect(line(page, chives).getByTestId('bought-preview')).toHaveText('2 → 3');
 
@@ -168,7 +168,7 @@ test('a shopping trip is prepared, shared between two phones and put away with a
     expect(await stockOf(page, milk)).toBe(27);
     expect(await stockOf(page, oats)).toBe(12);
     expect(await stockOf(page, chives)).toBe(36);
-    expect((await api(page, 'GET', '/api/ingredients')).filter((item) => ['Yoghurt', 'Cheddar', 'Leeks', 'Rice'].includes(item.name)).map((item) => [item.name, item.stock])).toEqual(demoStocks);
+    expect((await api(page, 'GET', '/api/items')).filter((item) => ['Yoghurt', 'Cheddar', 'Leeks', 'Rice'].includes(item.name)).map((item) => [item.name, item.stock])).toEqual(demoStocks);
     expect(await api(page, 'GET', '/api/grocery-list')).toBeNull();
 
     await samPage.evaluate(() => window.dispatchEvent(new Event('focus')));
@@ -197,7 +197,7 @@ test('a list needs an item to start and only one can be open', async ({ page }) 
     await page.getByTestId('start-shopping').click();
     await expect(page.getByTestId('progress')).toContainText('0 of 1');
 
-    await expect(api(page, 'POST', '/api/grocery-list', { ingredientIds: [created.id] })).rejects.toThrow('answered 422');
+    await expect(api(page, 'POST', '/api/grocery-list', { itemIds: [created.id] })).rejects.toThrow('answered 422');
     await page.getByTestId('back-home').click();
     await page.getByTestId('put-away-done').click();
     await expect(page.getByTestId('start-shopping')).toBeVisible();
@@ -207,7 +207,7 @@ test('a list needs an item to start and only one can be open', async ({ page }) 
 test('an item ticked in at put-away and stepped down to nothing adds nothing to the stock', async ({ page }) => {
     const name = unique('Maybe bread');
     const created = await ingredient(page, name, { stock: 0, unit: 'bag' });
-    await api(page, 'POST', '/api/grocery-list', { ingredientIds: [created.id] });
+    await api(page, 'POST', '/api/grocery-list', { itemIds: [created.id] });
 
     await page.goto('/groceries/put-away');
     await page.getByTestId('toggle-unbought').click();

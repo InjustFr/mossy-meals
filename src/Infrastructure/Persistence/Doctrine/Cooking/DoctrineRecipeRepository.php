@@ -7,9 +7,9 @@ namespace App\Infrastructure\Persistence\Doctrine\Cooking;
 use App\Domain\Cooking\Recipe;
 use App\Domain\Cooking\RecipeLine;
 use App\Domain\Cooking\RecipeRepository;
-use App\Domain\Pantry\Ingredient;
 use App\Domain\Shared\Alphabetical;
 use App\Domain\Shared\Exception\NotFound;
+use App\Domain\Stock\Item;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Uid\Ulid;
@@ -52,7 +52,7 @@ final readonly class DoctrineRecipeRepository implements RecipeRepository
         return $recipe instanceof Recipe ? $recipe : null;
     }
 
-    public function using(Ingredient $ingredient): array
+    public function using(Item $ingredient): array
     {
         return self::byName($this->entityManager->createQueryBuilder()
             ->select('r')
@@ -67,10 +67,10 @@ final readonly class DoctrineRecipeRepository implements RecipeRepository
     public function outputIds(): array
     {
         return array_map(
-            static fn (Ingredient $output): Ulid => $output->id(),
+            static fn (Item $output): Ulid => $output->id(),
             $this->entityManager->createQueryBuilder()
                 ->select('o')
-                ->from(Ingredient::class, 'o')
+                ->from(Item::class, 'o')
                 ->where('EXISTS (SELECT r.id FROM '.Recipe::class.' r WHERE r.output = o)')
                 ->getQuery()
                 ->getResult(),

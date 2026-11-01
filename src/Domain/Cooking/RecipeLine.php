@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Cooking;
 
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Quantity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Uid\Ulid;
@@ -23,9 +23,9 @@ class RecipeLine
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Recipe $recipe;
 
-    #[ORM\ManyToOne(targetEntity: Ingredient::class)]
+    #[ORM\ManyToOne(targetEntity: Item::class)]
     #[ORM\JoinColumn(nullable: false)]
-    private Ingredient $ingredient;
+    private Item $ingredient;
 
     #[ORM\Column(nullable: true)]
     private ?int $amountTwelfths;
@@ -51,7 +51,7 @@ class RecipeLine
         $this->position = $position;
     }
 
-    public function ingredient(): Ingredient
+    public function ingredient(): Item
     {
         return $this->ingredient;
     }

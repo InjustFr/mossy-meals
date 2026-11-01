@@ -20,7 +20,7 @@ final class SameOriginGuardTest extends TestCase
     #[DataProvider('crossSiteWrites')]
     public function testCrossSiteWritesAreForbidden(array $server): void
     {
-        $event = $this->guard('/api/ingredients', 'POST', $server);
+        $event = $this->guard('/api/items', 'POST', $server);
 
         self::assertSame(403, $event->getResponse()?->getStatusCode());
         self::assertSame('application/problem+json', $event->getResponse()->headers->get('Content-Type'));
@@ -45,8 +45,8 @@ final class SameOriginGuardTest extends TestCase
     /** @return iterable<array{string}> */
     public static function encodedApiPaths(): iterable
     {
-        yield 'encoded letter' => ['/%61pi/ingredients'];
-        yield 'encoded slash' => ['/api%2Fingredients'];
+        yield 'encoded letter' => ['/%61pi/items'];
+        yield 'encoded slash' => ['/api%2Fitems'];
     }
 
     /**
@@ -55,7 +55,7 @@ final class SameOriginGuardTest extends TestCase
     #[DataProvider('sameOriginWrites')]
     public function testSameOriginWritesPass(array $server): void
     {
-        self::assertFalse($this->guard('/api/ingredients', 'DELETE', $server)->hasResponse());
+        self::assertFalse($this->guard('/api/items', 'DELETE', $server)->hasResponse());
     }
 
     /** @return iterable<array{array<string, string>}> */
@@ -69,7 +69,7 @@ final class SameOriginGuardTest extends TestCase
 
     public function testCrossSiteReadsAreLeftToTheSession(): void
     {
-        self::assertFalse($this->guard('/api/ingredients', 'GET', ['HTTP_SEC_FETCH_SITE' => 'cross-site'])->hasResponse());
+        self::assertFalse($this->guard('/api/items', 'GET', ['HTTP_SEC_FETCH_SITE' => 'cross-site'])->hasResponse());
     }
 
     public function testPagesAreNotGuarded(): void

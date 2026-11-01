@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Cooking;
 
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Quantity;
-use App\Domain\Pantry\Unit;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Quantity;
+use App\Domain\Stock\Unit;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Uid\Ulid;
@@ -23,11 +23,11 @@ class MealLine
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Meal $meal;
 
-    #[ORM\ManyToOne(targetEntity: Ingredient::class)]
+    #[ORM\ManyToOne(targetEntity: Item::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?Ingredient $ingredient;
+    private ?Item $ingredient;
 
-    #[ORM\Column(length: Ingredient::MAX_NAME_LENGTH)]
+    #[ORM\Column(length: Item::MAX_NAME_LENGTH)]
     private string $name;
 
     #[ORM\Column(length: 16, enumType: Unit::class)]

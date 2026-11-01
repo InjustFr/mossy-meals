@@ -63,7 +63,7 @@ final class RecipeApiTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(24, Json::int(self::body($client), 'output', 'stock'));
-        $client->jsonRequest('GET', '/api/ingredients');
+        $client->jsonRequest('GET', '/api/items');
         self::assertSame([6, 24], array_column(self::body($client), 'stock'));
         $client->jsonRequest('GET', '/api/meals');
         self::assertSame([], Json::array(self::body($client), 'meals'));
@@ -88,7 +88,7 @@ final class RecipeApiTest extends WebTestCase
     {
         $client = self::signedInClient();
         $zucchini = self::ingredient($client, 'Zucchini', 0);
-        $client->jsonRequest('POST', '/api/ingredients', ['name' => 'Frozen zucchini', 'location' => 'freezer', 'unit' => 'bag', 'stock' => 6, 'variantOf' => $zucchini]);
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Frozen zucchini', 'location' => 'freezer', 'unit' => 'bag', 'stock' => 6, 'variantOf' => $zucchini]);
         $frozen = Json::string(self::body($client), 'id');
 
         $client->jsonRequest('POST', '/api/recipes', ['name' => 'Gratin', 'lines' => [['ingredientId' => $zucchini, 'amount' => 24]]]);
@@ -165,7 +165,7 @@ final class RecipeApiTest extends WebTestCase
             ['PUT', '/api/recipes/'.self::UNKNOWN, ['name' => 'Soup', 'lines' => [['ingredientId' => $pasta]]], 'This recipe no longer exists.'],
             ['DELETE', '/api/recipes/'.self::UNKNOWN, [], 'This recipe no longer exists.'],
             ['POST', '/api/recipes/'.self::UNKNOWN.'/make', ['made' => 12, 'used' => []], 'This recipe no longer exists.'],
-            ['POST', '/api/recipes', ['name' => 'Soup', 'lines' => [['ingredientId' => self::UNKNOWN]]], 'This ingredient no longer exists.'],
+            ['POST', '/api/recipes', ['name' => 'Soup', 'lines' => [['ingredientId' => self::UNKNOWN]]], 'This item no longer exists.'],
         ] as [$method, $path, $payload, $message]) {
             $client->jsonRequest($method, $path, $payload);
             self::assertResponseStatusCodeSame(404, "$method $path");
@@ -276,7 +276,7 @@ final class RecipeApiTest extends WebTestCase
         $client->jsonRequest('POST', "/api/recipes/$id/make", $payload);
 
         self::assertResponseStatusCodeSame(422, (string) json_encode($payload));
-        $client->jsonRequest('GET', '/api/ingredients');
+        $client->jsonRequest('GET', '/api/items');
         self::assertSame([24, 0], array_column(self::body($client), 'stock'));
     }
 
@@ -296,18 +296,29 @@ final class RecipeApiTest extends WebTestCase
     {
         $client = self::signedInClient();
         $pasta = self::ingredient($client, 'Pasta', 24);
-        $client->jsonRequest('POST', '/api/ingredients', ['name' => 'Soap', 'location' => 'household', 'unit' => 'bottle', 'stock' => 12]);
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Soap', 'kind' => 'household', 'location' => 'pantry', 'unit' => 'bottle', 'stock' => 12]);
         $soap = Json::string(self::body($client), 'id');
 
         $client->jsonRequest('POST', '/api/recipes', ['name' => 'Soapy pasta', 'lines' => [['ingredientId' => $pasta, 'amount' => 12], ['ingredientId' => $soap, 'amount' => 12]]]);
         self::assertResponseStatusCodeSame(422);
 
         $client->jsonRequest('POST', '/api/recipes', ['name' => 'Pasta bake', 'lines' => [['ingredientId' => $pasta, 'amount' => 12]]]);
-        $client->jsonRequest('PUT', "/api/ingredients/$pasta", ['name' => 'Pasta', 'location' => 'household', 'unit' => 'piece']);
+        $client->jsonRequest('PUT', "/api/items/$pasta", ['name' => 'Pasta', 'kind' => 'household', 'location' => 'pantry', 'unit' => 'piece']);
         self::assertResponseStatusCodeSame(422);
         self::assertSame('“Pasta” cannot be a household item: it is used by Pasta bake.', Json::string(self::body($client), 'detail'));
-        $client->jsonRequest('GET', '/api/ingredients');
-        self::assertSame(['pantry', 'household'], array_column(self::body($client), 'location'));
+        $client->jsonRequest('GET', '/api/items');
+        self::assertSame(['ingredient', 'household'], array_column(self::body($client), 'kind'));
+    }
+
+    public function testAnIngredientKeptAtHomeIsStillAnIngredient(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Mint', 'location' => 'home', 'unit' => 'piece', 'stock' => 12]);
+        $mint = Json::string(self::body($client), 'id');
+
+        $client->jsonRequest('POST', '/api/recipes', ['name' => 'Mint tea', 'lines' => [['ingredientId' => $mint, 'amount' => 12]]]);
+
+        self::assertResponseStatusCodeSame(201);
     }
 
     public function testAnIngredientUsedByARecipeCannotBeDeleted(): void
@@ -317,13 +328,13 @@ final class RecipeApiTest extends WebTestCase
         $client->jsonRequest('POST', '/api/recipes', ['name' => 'Pasta bake', 'lines' => [['ingredientId' => $pasta, 'amount' => 12]]]);
         $recipe = Json::string(self::body($client), 'id');
 
-        $client->jsonRequest('DELETE', "/api/ingredients/$pasta");
+        $client->jsonRequest('DELETE', "/api/items/$pasta");
         self::assertResponseStatusCodeSame(422);
         self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
         self::assertSame('“Pasta” cannot be deleted: it is used by Pasta bake.', Json::string(self::body($client), 'detail'));
 
         $client->jsonRequest('DELETE', "/api/recipes/$recipe");
-        $client->jsonRequest('DELETE', "/api/ingredients/$pasta");
+        $client->jsonRequest('DELETE', "/api/items/$pasta");
         self::assertResponseStatusCodeSame(204);
     }
 
@@ -337,7 +348,7 @@ final class RecipeApiTest extends WebTestCase
 
     private static function ingredient(KernelBrowser $client, string $name, int $stock, string $unit = 'piece', bool $manual = false): string
     {
-        $client->jsonRequest('POST', '/api/ingredients', ['name' => $name, 'location' => 'pantry', 'unit' => $unit, 'manual' => $manual, 'stock' => $stock]);
+        $client->jsonRequest('POST', '/api/items', ['name' => $name, 'location' => 'pantry', 'unit' => $unit, 'manual' => $manual, 'stock' => $stock]);
         self::assertResponseStatusCodeSame(201);
 
         return Json::string(self::body($client), 'id');

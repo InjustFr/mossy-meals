@@ -10,15 +10,15 @@ use App\Application\Cooking\RecipeViews;
 use App\Application\Transaction;
 use App\Domain\Cooking\Exception\RecipeNameTaken;
 use App\Domain\Cooking\RecipeRepository;
-use App\Domain\Pantry\IngredientRepository;
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\ItemRepository;
+use App\Domain\Stock\Quantity;
 use Symfony\Component\Uid\Ulid;
 
 final readonly class EditRecipeHandler
 {
     public function __construct(
         private RecipeRepository $recipes,
-        private IngredientRepository $ingredients,
+        private ItemRepository $ingredients,
         private CookingIngredients $cooking,
         private RecipeViews $views,
         private Transaction $transaction,

@@ -13,12 +13,12 @@ use App\Application\Cooking\RemoveMeal\RemoveMeal;
 use App\Application\Cooking\RemoveMeal\RemoveMealHandler;
 use App\Application\Cooking\UsedInput;
 use App\Application\Identity\MemberView;
-use App\Application\Pantry\AddIngredient\AddIngredient;
-use App\Application\Pantry\AddIngredient\AddIngredientHandler;
-use App\Application\Pantry\IngredientQueries;
-use App\Application\Pantry\IngredientView;
-use App\Application\Pantry\RemoveIngredient\RemoveIngredient;
-use App\Application\Pantry\RemoveIngredient\RemoveIngredientHandler;
+use App\Application\Stock\AddItem\AddItem;
+use App\Application\Stock\AddItem\AddItemHandler;
+use App\Application\Stock\ItemQueries;
+use App\Application\Stock\ItemView;
+use App\Application\Stock\RemoveItem\RemoveItem;
+use App\Application\Stock\RemoveItem\RemoveItemHandler;
 use App\Domain\Cooking\Exception\EmptyMeal;
 use App\Domain\Cooking\Exception\IngredientListedTwice;
 use App\Domain\Cooking\Exception\MealNeedsEater;
@@ -26,11 +26,11 @@ use App\Domain\Cooking\Exception\MealTitleTooLong;
 use App\Domain\Cooking\Exception\ZeroQuantity;
 use App\Domain\Cooking\MealType;
 use App\Domain\Identity\User;
-use App\Domain\Pantry\Exception\QuantityOutOfRange;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Unit;
 use App\Domain\Shared\Day;
 use App\Domain\Shared\Exception\NotFound;
+use App\Domain\Stock\Exception\QuantityOutOfRange;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Unit;
 use App\Tests\Support\ActsAsUser;
 use App\Tests\Support\FreezesClock;
 use Doctrine\ORM\EntityManagerInterface;
@@ -122,7 +122,7 @@ final class MealUseCasesTest extends KernelTestCase
     {
         $id = new Ulid();
 
-        $this->expectExceptionObject(new NotFound('ingredient', (string) $id));
+        $this->expectExceptionObject(new NotFound('item', (string) $id));
 
         $this->log('Pizza', [new UsedInput((string) $id, 12)]);
     }
@@ -199,7 +199,7 @@ final class MealUseCasesTest extends KernelTestCase
         $pasta = $this->ingredient('Pasta', 36, Unit::Pack);
         $rice = $this->ingredient('Rice', 36);
         $meal = $this->log('Mixed', [new UsedInput($pasta->id, 12), new UsedInput($rice->id, 12)]);
-        self::getContainer()->get(RemoveIngredientHandler::class)(new RemoveIngredient(Ulid::fromString($pasta->id)));
+        self::getContainer()->get(RemoveItemHandler::class)(new RemoveItem(Ulid::fromString($pasta->id)));
         self::getContainer()->get(EntityManagerInterface::class)->clear();
 
         [$stored] = $this->history(null)->meals;
@@ -286,9 +286,9 @@ final class MealUseCasesTest extends KernelTestCase
         self::assertSame('Louis', $meal->loggedBy->name);
     }
 
-    private function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): IngredientView
+    private function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): ItemView
     {
-        return self::getContainer()->get(AddIngredientHandler::class)(new AddIngredient($name, Location::Pantry, $unit, $manual, null, $stock));
+        return self::getContainer()->get(AddItemHandler::class)(new AddItem($name, Location::Pantry, $unit, $manual, null, $stock));
     }
 
     /**
@@ -316,7 +316,7 @@ final class MealUseCasesTest extends KernelTestCase
     private function stocks(string ...$names): array
     {
         $byName = [];
-        foreach (self::getContainer()->get(IngredientQueries::class)->all() as $view) {
+        foreach (self::getContainer()->get(ItemQueries::class)->all() as $view) {
             $byName[$view->name] = $view->stock;
         }
 

@@ -8,7 +8,7 @@ import { useToast } from '../../composables/useToast.js';
 import { currentLanguage } from '../../i18n/locale.js';
 import { groupByLocation } from '../../groceries/lists.js';
 import { describeQuantity } from '../../pantry/quantity.js';
-import IngredientPicker from '../pantry/IngredientPicker.vue';
+import ItemPicker from '../pantry/ItemPicker.vue';
 import BaseButton from '../ui/BaseButton.vue';
 import EmptyState from '../ui/EmptyState.vue';
 import PageSection from '../ui/PageSection.vue';
@@ -25,19 +25,19 @@ const ticks = useGroceryTicks();
 
 const rows = computed(() => props.list.items.map(ticks.view));
 const groups = computed(() => groupByLocation(rows.value));
-const listed = computed(() => props.list.items.map((item) => item.ingredientId));
+const listed = computed(() => props.list.items.map((item) => item.itemId));
 const done = computed(() => rows.value.filter((row) => row.ticked).length);
 
 const detailOf = (row) => t('groceries.row.left', { amount: describeQuantity(row.stock, row.unit, currentLanguage(), t) });
 
-const add = (ingredient) => toast.attempt(() => api.post('/api/grocery-list/items', { ingredientId: ingredient.id }));
+const add = (item) => toast.attempt(() => api.post('/api/grocery-list/items', { itemId: item.id }));
 </script>
 
 <template>
     <div class="shop">
         <p class="shop__progress tabular" data-test="progress">{{ t('groceries.shop.progress', { done, total: rows.length }) }}</p>
 
-        <IngredientPicker :exclude="listed" :label="t('groceries.shop.add')" :initial-stock="0" @pick="add" />
+        <ItemPicker :exclude="listed" :label="t('groceries.shop.add')" :initial-stock="0" @pick="add" />
 
         <EmptyState v-if="rows.length === 0" :icon="PhBasket" :title="t('groceries.shop.empty.title')" :hint="t('groceries.shop.empty.hint')" />
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Groceries;
 
-use App\Domain\Pantry\Ingredient;
+use App\Domain\Stock\Item;
 use Symfony\Component\Uid\Ulid;
 
 final readonly class Suggestion
@@ -20,13 +20,13 @@ final readonly class Suggestion
         $this->homemade = array_fill_keys(array_map(static fn (Ulid $id): string => (string) $id, $homemade), true);
     }
 
-    public function isHomemade(Ingredient $ingredient): bool
+    public function isHomemade(Item $item): bool
     {
-        return isset($this->homemade[(string) $ingredient->id()]);
+        return isset($this->homemade[(string) $item->id()]);
     }
 
-    public function suggests(Ingredient $ingredient): bool
+    public function suggests(Item $item): bool
     {
-        return $ingredient->isRunningLow() && !$this->isHomemade($ingredient) && $ingredient->isBoughtIn($this->month);
+        return $item->isRunningLow() && !$this->isHomemade($item) && $item->isBoughtIn($this->month);
     }
 }

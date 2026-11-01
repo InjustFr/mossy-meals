@@ -18,21 +18,21 @@ use App\Application\Groceries\StartGroceryList\StartGroceryList;
 use App\Application\Groceries\StartGroceryList\StartGroceryListHandler;
 use App\Application\Groceries\TickGroceryItem\TickGroceryItem;
 use App\Application\Groceries\TickGroceryItem\TickGroceryItemHandler;
-use App\Application\Pantry\AddIngredient\AddIngredient;
-use App\Application\Pantry\AddIngredient\AddIngredientHandler;
-use App\Application\Pantry\IngredientQueries;
-use App\Application\Pantry\IngredientView;
-use App\Application\Pantry\RemoveIngredient\RemoveIngredient;
-use App\Application\Pantry\RemoveIngredient\RemoveIngredientHandler;
+use App\Application\Stock\AddItem\AddItem;
+use App\Application\Stock\AddItem\AddItemHandler;
+use App\Application\Stock\ItemQueries;
+use App\Application\Stock\ItemView;
+use App\Application\Stock\RemoveItem\RemoveItem;
+use App\Application\Stock\RemoveItem\RemoveItemHandler;
 use App\Domain\Cooking\Exception\IngredientListedTwice;
 use App\Domain\Cooking\Exception\ZeroQuantity;
 use App\Domain\Groceries\Exception\EmptyGroceryList;
 use App\Domain\Groceries\Exception\GroceryListAlreadyOpen;
 use App\Domain\Identity\User;
-use App\Domain\Pantry\Exception\QuantityOutOfRange;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Unit;
 use App\Domain\Shared\Exception\NotFound;
+use App\Domain\Stock\Exception\QuantityOutOfRange;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Unit;
 use App\Tests\Support\ActsAsUser;
 use App\Tests\Support\FreezesClock;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -65,7 +65,7 @@ final class GroceryUseCasesTest extends KernelTestCase
         self::assertSame(['Louis', '2026-10-06T08:00:00+00:00'], [$list->startedBy->name, $list->startedAt]);
         self::assertSame(
             [[$eggs->id, 'Eggs', 'piece', 'pantry', 24, false], [$milk->id, 'Milk', 'carton', 'fridge', 0, false]],
-            array_map(static fn ($item): array => [$item->ingredientId, $item->name, $item->unit, $item->location, $item->stock, $item->ticked], $list->items),
+            array_map(static fn ($item): array => [$item->itemId, $item->name, $item->unit, $item->location, $item->stock, $item->ticked], $list->items),
         );
     }
 
@@ -85,7 +85,7 @@ final class GroceryUseCasesTest extends KernelTestCase
         self::assertNull($this->open());
     }
 
-    public function testAListNeedsAtLeastOneIngredient(): void
+    public function testAListNeedsAtLeastOneItem(): void
     {
         $this->expectExceptionObject(new EmptyGroceryList());
 
@@ -119,7 +119,7 @@ final class GroceryUseCasesTest extends KernelTestCase
     {
         $unknown = new Ulid();
 
-        $this->expectExceptionObject(new NotFound('ingredient', (string) $unknown));
+        $this->expectExceptionObject(new NotFound('item', (string) $unknown));
 
         self::getContainer()->get(StartGroceryListHandler::class)(new StartGroceryList([(string) $unknown]));
     }
@@ -152,10 +152,10 @@ final class GroceryUseCasesTest extends KernelTestCase
 
         $list = $this->add($milk);
 
-        self::assertSame([[$milk->id, true]], array_map(static fn ($item): array => [$item->ingredientId, $item->ticked], $list->items));
+        self::assertSame([[$milk->id, true]], array_map(static fn ($item): array => [$item->itemId, $item->ticked], $list->items));
     }
 
-    public function testAddNeedsAnOpenListAndAKnownIngredient(): void
+    public function testAddNeedsAnOpenListAndAKnownItem(): void
     {
         $milk = $this->ingredient('Milk', 0);
 
@@ -169,7 +169,7 @@ final class GroceryUseCasesTest extends KernelTestCase
         $this->start([$milk]);
         $unknown = new Ulid();
 
-        $this->expectExceptionObject(new NotFound('ingredient', (string) $unknown));
+        $this->expectExceptionObject(new NotFound('item', (string) $unknown));
 
         self::getContainer()->get(AddGroceryItemHandler::class)(new AddGroceryItem($unknown));
     }
@@ -300,7 +300,7 @@ final class GroceryUseCasesTest extends KernelTestCase
         $this->start([$milk, $eggs]);
         self::getContainer()->get(EntityManagerInterface::class)->clear();
 
-        self::getContainer()->get(RemoveIngredientHandler::class)(new RemoveIngredient(Ulid::fromString($milk->id)));
+        self::getContainer()->get(RemoveItemHandler::class)(new RemoveItem(Ulid::fromString($milk->id)));
         self::getContainer()->get(EntityManagerInterface::class)->clear();
 
         self::assertSame(['Eggs'], array_map(static fn ($item): string => $item->name, $this->open()->items ?? []));
@@ -315,7 +315,7 @@ final class GroceryUseCasesTest extends KernelTestCase
         self::getContainer()->get(WriteRecipeHandler::class)(new WriteRecipe('Seitan', [new RecipeLineInput($gluten->id, 12)], $seitan->id, 12));
 
         $views = [];
-        foreach (self::getContainer()->get(IngredientQueries::class)->all() as $view) {
+        foreach (self::getContainer()->get(ItemQueries::class)->all() as $view) {
             $views[$view->name] = [$view->homemade, $view->suggested];
         }
 
@@ -332,20 +332,20 @@ final class GroceryUseCasesTest extends KernelTestCase
         self::assertSame([false, true], [$milk->homemade, $milk->suggested]);
     }
 
-    private function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, Location $location = Location::Pantry): IngredientView
+    private function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, Location $location = Location::Pantry): ItemView
     {
-        return self::getContainer()->get(AddIngredientHandler::class)(new AddIngredient($name, $location, $unit, false, null, $stock));
+        return self::getContainer()->get(AddItemHandler::class)(new AddItem($name, $location, $unit, false, null, $stock));
     }
 
     /**
-     * @param list<IngredientView> $ingredients
+     * @param list<ItemView> $ingredients
      */
     private function start(array $ingredients): GroceryListView
     {
-        return self::getContainer()->get(StartGroceryListHandler::class)(new StartGroceryList(array_map(static fn (IngredientView $ingredient): string => $ingredient->id, $ingredients)));
+        return self::getContainer()->get(StartGroceryListHandler::class)(new StartGroceryList(array_map(static fn (ItemView $ingredient): string => $ingredient->id, $ingredients)));
     }
 
-    private function add(IngredientView $ingredient): GroceryListView
+    private function add(ItemView $ingredient): GroceryListView
     {
         return self::getContainer()->get(AddGroceryItemHandler::class)(new AddGroceryItem(Ulid::fromString($ingredient->id)));
     }
@@ -374,7 +374,7 @@ final class GroceryUseCasesTest extends KernelTestCase
     private function stocks(string ...$names): array
     {
         $byName = [];
-        foreach (self::getContainer()->get(IngredientQueries::class)->all() as $view) {
+        foreach (self::getContainer()->get(ItemQueries::class)->all() as $view) {
             $byName[$view->name] = $view->stock;
         }
 

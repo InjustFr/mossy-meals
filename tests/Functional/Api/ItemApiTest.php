@@ -1,0 +1,423 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Functional\Api;
+
+use App\Infrastructure\Security\SecurityUser;
+use App\Tests\Support\Json;
+use App\Tests\Support\SignsInClient;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
+final class ItemApiTest extends WebTestCase
+{
+    use SignsInClient;
+
+    private const string UNKNOWN = '01JAAAAAAAAAAAAAAAAAAAAAAA';
+
+    public function testItemLifecycle(): void
+    {
+        $client = self::signedInClient();
+
+        $client->jsonRequest('POST', '/api/items', ['name' => '  Milk ', 'location' => 'fridge', 'unit' => 'carton']);
+        self::assertResponseStatusCodeSame(201);
+        $milk = self::body($client);
+        $id = Json::string($milk, 'id');
+        self::assertSame(['Milk', 'fridge', 'carton', false, 0, 3, true, true], [$milk['name'], $milk['location'], $milk['unit'], $milk['manual'], $milk['stock'], $milk['lowAt'], $milk['runningLow'], $milk['out']]);
+
+        $client->jsonRequest('POST', "/api/items/$id/adjust", ['by' => 24]);
+        self::assertResponseIsSuccessful();
+        self::assertSame([24, false, false], [Json::int(self::body($client), 'stock'), self::body($client)['runningLow'], self::body($client)['out']]);
+
+        $client->jsonRequest('POST', "/api/items/$id/adjust", ['by' => -30]);
+        self::assertResponseIsSuccessful();
+        self::assertSame([0, true], [Json::int(self::body($client), 'stock'), self::body($client)['out']]);
+
+        $client->jsonRequest('PUT', "/api/items/$id/stock", ['stock' => 9]);
+        self::assertResponseIsSuccessful();
+        self::assertSame(9, Json::int(self::body($client), 'stock'));
+
+        $client->jsonRequest('PUT', "/api/items/$id", ['name' => 'Oat milk', 'location' => 'pantry', 'unit' => 'bottle', 'manual' => true, 'lowAt' => 6]);
+        self::assertResponseIsSuccessful();
+        $edited = self::body($client);
+        self::assertSame(['Oat milk', 'pantry', 'bottle', true, 9, 6, false], [$edited['name'], $edited['location'], $edited['unit'], $edited['manual'], $edited['stock'], $edited['lowAt'], $edited['runningLow']]);
+
+        $client->jsonRequest('GET', '/api/items');
+        self::assertResponseIsSuccessful();
+        self::assertSame(['Oat milk'], array_column(self::body($client), 'name'));
+
+        $client->jsonRequest('DELETE', "/api/items/$id");
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('', $client->getResponse()->getContent());
+
+        $client->jsonRequest('GET', '/api/items');
+        self::assertSame([], self::body($client));
+    }
+
+    public function testAnItemIsAddedWithItsStock(): void
+    {
+        $client = self::signedInClient();
+
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton', 'stock' => 21]);
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame([21, false, false], [Json::int(self::body($client), 'stock'), self::body($client)['runningLow'], self::body($client)['out']]);
+    }
+
+    public function testEditingNeverTouchesTheStock(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton', 'stock' => 21]);
+        $id = Json::string(self::body($client), 'id');
+
+        $client->jsonRequest('PUT', "/api/items/$id", ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton', 'stock' => 0]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(21, Json::int(self::body($client), 'stock'));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    #[DataProvider('invalidInitialStocks')]
+    public function testInvalidInitialStocksAre422(array $payload): void
+    {
+        $client = self::signedInClient();
+
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton', ...$payload]);
+
+        self::assertResponseStatusCodeSame(422, (string) json_encode($payload));
+        self::assertNotSame([], Json::array(self::body($client), 'violations'));
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function invalidInitialStocks(): iterable
+    {
+        yield 'negative' => [['stock' => -1]];
+        yield 'above 999 units' => [['stock' => 11989]];
+        yield 'a word' => [['stock' => 'plenty']];
+    }
+
+    public function testMonthsAndVariantsAreSavedAndShown(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Zucchini', 'location' => 'fridge', 'unit' => 'piece']);
+        $zucchini = self::body($client);
+        self::assertSame([range(1, 12), null], [$zucchini['months'], $zucchini['variantOf']]);
+        $zucchiniId = Json::string($zucchini, 'id');
+
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Frozen zucchini', 'location' => 'freezer', 'unit' => 'bag', 'months' => [11, 1, 12], 'variantOf' => $zucchiniId]);
+        self::assertResponseStatusCodeSame(201);
+        $frozen = self::body($client);
+        self::assertSame([[1, 11, 12], $zucchiniId], [$frozen['months'], $frozen['variantOf']]);
+        $frozenId = Json::string($frozen, 'id');
+
+        $client->jsonRequest('PUT', "/api/items/$frozenId", ['name' => 'Frozen zucchini', 'location' => 'freezer', 'unit' => 'bag', 'months' => []]);
+        self::assertResponseIsSuccessful();
+        self::assertSame([[], null, false], [self::body($client)['months'], self::body($client)['variantOf'], self::body($client)['suggested']]);
+
+        $client->jsonRequest('DELETE', "/api/items/$zucchiniId");
+        self::assertResponseStatusCodeSame(204);
+    }
+
+    public function testWithoutAStockAlertAnItemIsNeverLowNorSuggested(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Pesto', 'location' => 'fridge', 'unit' => 'jar', 'alert' => false]);
+        self::assertResponseStatusCodeSame(201);
+        $pesto = self::body($client);
+        self::assertSame([false, false, false, true], [$pesto['alert'], $pesto['runningLow'], $pesto['suggested'], $pesto['out']]);
+
+        $client->jsonRequest('PUT', '/api/items/'.Json::string($pesto, 'id'), ['name' => 'Pesto', 'location' => 'fridge', 'unit' => 'jar']);
+        self::assertSame([true, true, true], [self::body($client)['alert'], self::body($client)['runningLow'], self::body($client)['suggested']]);
+    }
+
+    public function testHouseholdSuppliesAreKeptLikeItems(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Toilet paper', 'kind' => 'household', 'location' => 'home', 'unit' => 'pack', 'manual' => false, 'months' => []]);
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame(['household', 'home', true, range(1, 12), true], [self::body($client)['kind'], self::body($client)['location'], self::body($client)['manual'], self::body($client)['months'], self::body($client)['suggested']]);
+    }
+
+    public function testTheKindRoundTripsAndDefaultsToIngredient(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Sponges', 'location' => 'pantry', 'unit' => 'pack']);
+        $created = self::body($client);
+        self::assertSame('ingredient', $created['kind']);
+        $id = Json::string($created, 'id');
+
+        $client->jsonRequest('PUT', "/api/items/$id", ['name' => 'Sponges', 'kind' => 'household', 'location' => 'pantry', 'unit' => 'pack']);
+        self::assertSame(['household', 'pantry'], [Json::string(self::body($client), 'kind'), Json::string(self::body($client), 'location')]);
+
+        $client->jsonRequest('GET', '/api/items');
+        self::assertSame(['household'], array_column(self::body($client), 'kind'));
+    }
+
+    public function testDeletingAMainItemFreesItsVariants(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Zucchini', 'location' => 'fridge', 'unit' => 'piece']);
+        $zucchini = Json::string(self::body($client), 'id');
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Frozen zucchini', 'location' => 'freezer', 'unit' => 'bag', 'variantOf' => $zucchini]);
+
+        $client->jsonRequest('DELETE', "/api/items/$zucchini");
+        self::assertResponseStatusCodeSame(204);
+
+        $client->jsonRequest('GET', '/api/items');
+        self::assertSame([null], array_column(self::body($client), 'variantOf'));
+    }
+
+    public function testVariantsGoOneLevelDeep(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Zucchini', 'location' => 'fridge', 'unit' => 'piece']);
+        $zucchini = Json::string(self::body($client), 'id');
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Frozen zucchini', 'location' => 'freezer', 'unit' => 'bag', 'variantOf' => $zucchini]);
+        $frozen = Json::string(self::body($client), 'id');
+
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Cheap zucchini', 'location' => 'freezer', 'unit' => 'bag', 'variantOf' => $frozen]);
+        self::assertResponseStatusCodeSame(422);
+
+        $client->jsonRequest('PUT', "/api/items/$zucchini", ['name' => 'Zucchini', 'location' => 'fridge', 'unit' => 'piece', 'variantOf' => $zucchini]);
+        self::assertResponseStatusCodeSame(422);
+
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Ghost zucchini', 'location' => 'freezer', 'unit' => 'bag', 'variantOf' => self::UNKNOWN]);
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testTheListIsSortedByNameIgnoringCase(): void
+    {
+        $client = self::signedInClient();
+        foreach (['zucchini', 'Apples', 'beans'] as $name) {
+            $client->jsonRequest('POST', '/api/items', ['name' => $name, 'location' => 'pantry', 'unit' => 'piece']);
+        }
+
+        $client->jsonRequest('GET', '/api/items');
+
+        self::assertSame(['Apples', 'beans', 'zucchini'], array_column(self::body($client), 'name'));
+    }
+
+    public function testWritesAnswerWithTheRefreshedListWhenAsked(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Eggs', 'location' => 'fridge', 'unit' => 'piece'], ['HTTP_X_REFRESH' => '["/api/items"]']);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertResponseHasHeader('X-Refreshed');
+        self::assertSame(['Eggs'], array_column(Json::array(self::body($client), 'refreshed', '/api/items'), 'name'));
+        self::assertSame('Eggs', Json::string(self::body($client), 'data', 'name'));
+    }
+
+    public function testEveryEndpointNeedsASignedInUser(): void
+    {
+        $client = self::createClient();
+
+        foreach ([
+            ['GET', '/api/items', []],
+            ['POST', '/api/items', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton']],
+            ['PUT', '/api/items/'.self::UNKNOWN, ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton']],
+            ['DELETE', '/api/items/'.self::UNKNOWN, []],
+            ['POST', '/api/items/'.self::UNKNOWN.'/adjust', ['by' => 1]],
+            ['PUT', '/api/items/'.self::UNKNOWN.'/stock', ['stock' => 1]],
+        ] as [$method, $path, $payload]) {
+            $client->jsonRequest($method, $path, $payload);
+            self::assertResponseStatusCodeSame(401, "$method $path");
+        }
+    }
+
+    public function testEveryoneInTheKitchenSeesAndEditsTheSameItems(): void
+    {
+        $client = self::signedInClient('louis@muhmeal.test', 'Louis');
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton']);
+        $id = Json::string(self::body($client), 'id');
+
+        $client->loginUser(SecurityUser::fromUser(self::createUser('ada@muhmeal.test', 'Ada')));
+        $client->jsonRequest('POST', "/api/items/$id/adjust", ['by' => 12]);
+        self::assertResponseIsSuccessful();
+
+        $client->jsonRequest('GET', '/api/items');
+        self::assertSame([12], array_column(self::body($client), 'stock'));
+    }
+
+    public function testUnknownItemsAre404(): void
+    {
+        $client = self::signedInClient();
+
+        foreach ([
+            ['PUT', '/api/items/'.self::UNKNOWN, ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton']],
+            ['DELETE', '/api/items/'.self::UNKNOWN, []],
+            ['POST', '/api/items/'.self::UNKNOWN.'/adjust', ['by' => 1]],
+            ['PUT', '/api/items/'.self::UNKNOWN.'/stock', ['stock' => 1]],
+        ] as [$method, $path, $payload]) {
+            $client->jsonRequest($method, $path, $payload);
+            self::assertResponseStatusCodeSame(404, "$method $path");
+            self::assertSame('This item no longer exists.', Json::string(self::body($client), 'detail'));
+        }
+    }
+
+    public function testMalformedIdentifiersAre404(): void
+    {
+        $client = self::signedInClient();
+
+        $client->jsonRequest('DELETE', '/api/items/not-an-id');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testNamesAreUniqueIgnoringCase(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Olive oil', 'location' => 'pantry', 'unit' => 'bottle']);
+        $oil = Json::string(self::body($client), 'id');
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton']);
+        $milk = Json::string(self::body($client), 'id');
+
+        $client->jsonRequest('POST', '/api/items', ['name' => 'OLIVE OIL', 'location' => 'pantry', 'unit' => 'bottle']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
+        self::assertSame('There is already an item called “OLIVE OIL”.', Json::string(self::body($client), 'detail'));
+
+        $client->jsonRequest('PUT', "/api/items/$milk", ['name' => 'olive oil', 'location' => 'fridge', 'unit' => 'carton']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
+
+        $client->jsonRequest('PUT', "/api/items/$oil", ['name' => 'olive OIL', 'location' => 'pantry', 'unit' => 'bottle']);
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testBusinessRulesAnswerInTheCallersLanguage(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Beurre', 'location' => 'fridge', 'unit' => 'pack']);
+
+        $client->jsonRequest('POST', '/api/items', ['name' => 'beurre', 'location' => 'fridge', 'unit' => 'pack'], ['HTTP_ACCEPT_LANGUAGE' => 'fr']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('Il existe déjà un article nommé « beurre ».', Json::string(self::body($client), 'detail'));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    #[DataProvider('invalidItems')]
+    public function testInvalidItemsAre422(array $payload): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton']);
+        $id = Json::string(self::body($client), 'id');
+
+        $client->jsonRequest('POST', '/api/items', $payload);
+        self::assertResponseStatusCodeSame(422, (string) json_encode($payload));
+        self::assertNotSame([], Json::array(self::body($client), 'violations'));
+
+        $client->jsonRequest('PUT', "/api/items/$id", $payload);
+        self::assertResponseStatusCodeSame(422, (string) json_encode($payload));
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function invalidItems(): iterable
+    {
+        yield 'no name' => [['location' => 'pantry', 'unit' => 'piece']];
+        yield 'blank name' => [['name' => '  ', 'location' => 'pantry', 'unit' => 'piece']];
+        yield 'long name' => [['name' => str_repeat('a', 61), 'location' => 'pantry', 'unit' => 'piece']];
+        yield 'unknown location' => [['name' => 'Rice', 'location' => 'garage', 'unit' => 'piece']];
+        yield 'unknown kind' => [['name' => 'Rice', 'kind' => 'soap', 'location' => 'pantry', 'unit' => 'piece']];
+        yield 'no location' => [['name' => 'Rice', 'unit' => 'piece']];
+        yield 'unknown unit' => [['name' => 'Rice', 'location' => 'pantry', 'unit' => 'kilo']];
+        yield 'no unit' => [['name' => 'Rice', 'location' => 'pantry']];
+        yield 'manual is not a flag' => [['name' => 'Rice', 'location' => 'pantry', 'unit' => 'piece', 'manual' => 'yes']];
+        yield 'negative threshold' => [['name' => 'Rice', 'location' => 'pantry', 'unit' => 'piece', 'lowAt' => -1]];
+        yield 'threshold above 999 units' => [['name' => 'Rice', 'location' => 'pantry', 'unit' => 'piece', 'lowAt' => 11989]];
+        yield 'month zero' => [['name' => 'Rice', 'location' => 'pantry', 'unit' => 'piece', 'months' => [0]]];
+        yield 'month thirteen' => [['name' => 'Rice', 'location' => 'pantry', 'unit' => 'piece', 'months' => [13]]];
+        yield 'months are not a list' => [['name' => 'Rice', 'location' => 'pantry', 'unit' => 'piece', 'months' => 'summer']];
+        yield 'malformed variant' => [['name' => 'Rice', 'location' => 'pantry', 'unit' => 'piece', 'variantOf' => 'rice']];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    #[DataProvider('invalidAdjustments')]
+    public function testInvalidAdjustmentsAre422(array $payload): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Eggs', 'location' => 'fridge', 'unit' => 'piece']);
+        $id = Json::string(self::body($client), 'id');
+
+        $client->jsonRequest('POST', "/api/items/$id/adjust", $payload);
+
+        self::assertResponseStatusCodeSame(422, (string) json_encode($payload));
+        self::assertNotSame([], Json::array(self::body($client), 'violations'));
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function invalidAdjustments(): iterable
+    {
+        yield 'nothing' => [[]];
+        yield 'zero' => [['by' => 0]];
+        yield 'too much' => [['by' => 11989]];
+        yield 'too little' => [['by' => -11989]];
+        yield 'a word' => [['by' => 'lots']];
+    }
+
+    public function testAdjustingPastTheCeilingIs422(): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Eggs', 'location' => 'fridge', 'unit' => 'piece']);
+        $id = Json::string(self::body($client), 'id');
+        $client->jsonRequest('PUT', "/api/items/$id/stock", ['stock' => 11988]);
+
+        $client->jsonRequest('POST', "/api/items/$id/adjust", ['by' => 1]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('A quantity goes from 0 to 999 units.', Json::string(self::body($client), 'detail'));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    #[DataProvider('invalidStocks')]
+    public function testInvalidStocksAre422(array $payload): void
+    {
+        $client = self::signedInClient();
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Eggs', 'location' => 'fridge', 'unit' => 'piece']);
+        $id = Json::string(self::body($client), 'id');
+
+        $client->jsonRequest('PUT', "/api/items/$id/stock", $payload);
+
+        self::assertResponseStatusCodeSame(422, (string) json_encode($payload));
+        self::assertNotSame([], Json::array(self::body($client), 'violations'));
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function invalidStocks(): iterable
+    {
+        yield 'nothing' => [[]];
+        yield 'negative' => [['stock' => -1]];
+        yield 'above 999 units' => [['stock' => 11989]];
+        yield 'a word' => [['stock' => 'plenty']];
+    }
+
+    public function testValidationMessagesFollowTheLanguage(): void
+    {
+        $client = self::signedInClient();
+
+        $client->jsonRequest('POST', '/api/items', ['name' => '', 'location' => 'pantry', 'unit' => 'piece'], ['HTTP_ACCEPT_LANGUAGE' => 'fr']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['Saisissez un nom.'], array_column(Json::array(self::body($client), 'violations'), 'title'));
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private static function body(KernelBrowser $client): array
+    {
+        return Json::decode((string) $client->getResponse()->getContent());
+    }
+}

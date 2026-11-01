@@ -36,7 +36,7 @@ final class DomainExceptionListenerTest extends TestCase
 
     private function handle(\Throwable $exception): ExceptionEvent
     {
-        $event = new ExceptionEvent($this->createStub(HttpKernelInterface::class), Request::create('/api/ingredients'), HttpKernelInterface::MAIN_REQUEST, $exception);
+        $event = new ExceptionEvent($this->createStub(HttpKernelInterface::class), Request::create('/api/items'), HttpKernelInterface::MAIN_REQUEST, $exception);
         new DomainExceptionListener(new IdentityTranslator())($event);
 
         return $event;

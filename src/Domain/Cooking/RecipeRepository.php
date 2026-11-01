@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Cooking;
 
-use App\Domain\Pantry\Ingredient;
+use App\Domain\Stock\Item;
 use Symfony\Component\Uid\Ulid;
 
 interface RecipeRepository
@@ -20,7 +20,7 @@ interface RecipeRepository
     /**
      * @return list<Recipe>
      */
-    public function using(Ingredient $ingredient): array;
+    public function using(Item $ingredient): array;
 
     /**
      * @return list<Ulid>

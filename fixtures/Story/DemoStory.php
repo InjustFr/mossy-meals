@@ -10,11 +10,12 @@ use App\Domain\Cooking\Need;
 use App\Domain\Cooking\Portion;
 use App\Domain\Cooking\Recipe;
 use App\Domain\Identity\User;
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Quantity;
-use App\Domain\Pantry\Unit;
-use App\Fixtures\Factory\IngredientFactory;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Kind;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Quantity;
+use App\Domain\Stock\Unit;
+use App\Fixtures\Factory\ItemFactory;
 use App\Fixtures\Factory\UserFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
@@ -38,8 +39,8 @@ final class DemoStory extends Story
         $sam = UserFactory::createOne(['accountId' => 'sam', 'email' => 'sam@muhmeal.local', 'displayName' => 'Sam', 'now' => $now]);
 
         $kitchen = [];
-        foreach ($this->kitchen() as [$name, $location, $unit, $stock, $manual]) {
-            $kitchen[$name] = IngredientFactory::createOne(['name' => $name, 'location' => $location, 'unit' => $unit, 'stock' => $stock, 'manual' => $manual, 'now' => $now]);
+        foreach ($this->kitchen() as [$name, $kind, $location, $unit, $stock, $manual]) {
+            $kitchen[$name] = ItemFactory::createOne(['name' => $name, 'kind' => $kind, 'location' => $location, 'unit' => $unit, 'stock' => $stock, 'manual' => $manual, 'now' => $now]);
         }
 
         $this->recipes($kitchen, $now);
@@ -48,37 +49,37 @@ final class DemoStory extends Story
     }
 
     /**
-     * @return list<array{string, Location, Unit, int, bool}>
+     * @return list<array{string, Kind, Location, Unit, int, bool}>
      */
     private function kitchen(): array
     {
         return [
-            ['Butter', Location::Fridge, Unit::Pack, 6, false],
-            ['Cheddar', Location::Fridge, Unit::Pack, 3, false],
-            ['Eggs', Location::Fridge, Unit::Piece, 8 * self::UNIT, false],
-            ['Leeks', Location::Fridge, Unit::Piece, self::UNIT, false],
-            ['Milk', Location::Fridge, Unit::Carton, 21, false],
-            ['Seitan', Location::Fridge, Unit::Bag, 0, false],
-            ['Yoghurt', Location::Fridge, Unit::Tub, 0, false],
-            ['Fish fingers', Location::Freezer, Unit::Box, self::UNIT, false],
-            ['Frozen berries', Location::Freezer, Unit::Bag, 28, false],
-            ['Peas', Location::Freezer, Unit::Bag, 8, false],
-            ['Canned tomatoes', Location::Pantry, Unit::Can, 4 * self::UNIT, false],
-            ['Flour', Location::Pantry, Unit::Bag, 18, false],
-            ['Gluten', Location::Pantry, Unit::Bag, 2 * self::UNIT, false],
-            ['Olive oil', Location::Pantry, Unit::Bottle, 10, true],
-            ['Onions', Location::Pantry, Unit::Piece, 5 * self::UNIT, false],
-            ['Pasta', Location::Pantry, Unit::Pack, 3 * self::UNIT, false],
-            ['Rice', Location::Pantry, Unit::Bag, 3, false],
-            ['Salt', Location::Pantry, Unit::Box, self::UNIT, true],
-            ['Spices', Location::Pantry, Unit::Jar, 6, true],
-            ['Water', Location::Pantry, Unit::Bottle, 2 * self::UNIT, true],
-            ['Toilet paper', Location::Household, Unit::Pack, 3, false],
+            ['Butter', Kind::Ingredient, Location::Fridge, Unit::Pack, 6, false],
+            ['Cheddar', Kind::Ingredient, Location::Fridge, Unit::Pack, 3, false],
+            ['Eggs', Kind::Ingredient, Location::Fridge, Unit::Piece, 8 * self::UNIT, false],
+            ['Leeks', Kind::Ingredient, Location::Fridge, Unit::Piece, self::UNIT, false],
+            ['Milk', Kind::Ingredient, Location::Fridge, Unit::Carton, 21, false],
+            ['Seitan', Kind::Ingredient, Location::Fridge, Unit::Bag, 0, false],
+            ['Yoghurt', Kind::Ingredient, Location::Fridge, Unit::Tub, 0, false],
+            ['Fish fingers', Kind::Ingredient, Location::Freezer, Unit::Box, self::UNIT, false],
+            ['Frozen berries', Kind::Ingredient, Location::Freezer, Unit::Bag, 28, false],
+            ['Peas', Kind::Ingredient, Location::Freezer, Unit::Bag, 8, false],
+            ['Canned tomatoes', Kind::Ingredient, Location::Pantry, Unit::Can, 4 * self::UNIT, false],
+            ['Flour', Kind::Ingredient, Location::Pantry, Unit::Bag, 18, false],
+            ['Gluten', Kind::Ingredient, Location::Pantry, Unit::Bag, 2 * self::UNIT, false],
+            ['Olive oil', Kind::Ingredient, Location::Pantry, Unit::Bottle, 10, true],
+            ['Onions', Kind::Ingredient, Location::Pantry, Unit::Piece, 5 * self::UNIT, false],
+            ['Pasta', Kind::Ingredient, Location::Pantry, Unit::Pack, 3 * self::UNIT, false],
+            ['Rice', Kind::Ingredient, Location::Pantry, Unit::Bag, 3, false],
+            ['Salt', Kind::Ingredient, Location::Pantry, Unit::Box, self::UNIT, true],
+            ['Spices', Kind::Ingredient, Location::Pantry, Unit::Jar, 6, true],
+            ['Water', Kind::Ingredient, Location::Pantry, Unit::Bottle, 2 * self::UNIT, true],
+            ['Toilet paper', Kind::Household, Location::Home, Unit::Pack, 3, false],
         ];
     }
 
     /**
-     * @param array<string, Ingredient> $kitchen
+     * @param array<string, Item> $kitchen
      */
     private function recipes(array $kitchen, \DateTimeImmutable $now): void
     {
@@ -119,7 +120,7 @@ final class DemoStory extends Story
     }
 
     /**
-     * @param array<string, Ingredient> $kitchen
+     * @param array<string, Item> $kitchen
      */
     private function need(array $kitchen, string $name, ?int $twelfths = null): Need
     {
@@ -127,7 +128,7 @@ final class DemoStory extends Story
     }
 
     /**
-     * @param array<string, Ingredient> $kitchen
+     * @param array<string, Item> $kitchen
      */
     private function pastMeals(array $kitchen, User $demo, User $sam, \DateTimeImmutable $now): void
     {

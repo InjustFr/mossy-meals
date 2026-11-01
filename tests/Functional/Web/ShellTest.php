@@ -43,7 +43,7 @@ final class ShellTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertCount(1, $crawler->filter('#app'));
-        self::assertSame(['/api/ingredients', ...$preloaded], array_keys(Json::decode($crawler->filter('#app-preload')->text())));
+        self::assertSame(['/api/items', ...$preloaded], array_keys(Json::decode($crawler->filter('#app-preload')->text())));
     }
 
     public function testTheCookPageCarriesTheRecipesAndTheHistoryTheMeals(): void
@@ -60,12 +60,12 @@ final class ShellTest extends WebTestCase
     public function testTheIngredientsTravelWithEveryPage(): void
     {
         $client = self::signedInClient();
-        $client->jsonRequest('POST', '/api/ingredients', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton']);
+        $client->jsonRequest('POST', '/api/items', ['name' => 'Milk', 'location' => 'fridge', 'unit' => 'carton']);
 
         $crawler = $client->request('GET', '/recipes');
 
         $preload = Json::decode($crawler->filter('#app-preload')->text());
-        self::assertSame(['Milk'], array_column(Json::array($preload, '/api/ingredients'), 'name'));
+        self::assertSame(['Milk'], array_column(Json::array($preload, '/api/items'), 'name'));
     }
 
     /** @return iterable<array{string, list<string>}> */

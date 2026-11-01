@@ -12,7 +12,7 @@ import FractionChips from './FractionChips.vue';
 import QuantityStepper from './QuantityStepper.vue';
 
 const props = defineProps({
-    ingredient: { type: Object, default: null },
+    item: { type: Object, default: null },
 });
 const open = defineModel('open', { type: Boolean, required: true });
 
@@ -23,26 +23,26 @@ const toast = useToast();
 const whole = ref(0);
 const fraction = ref(0);
 const total = computed(() => whole.value + fraction.value);
-const summary = computed(() => (props.ingredient ? describeQuantity(total.value, props.ingredient.unit, currentLanguage(), t) : ''));
+const summary = computed(() => (props.item ? describeQuantity(total.value, props.item.unit, currentLanguage(), t) : ''));
 const saving = ref(false);
 
 watch(open, (isOpen) => {
-    if (isOpen && props.ingredient) {
-        ({ whole: whole.value, fraction: fraction.value } = splitQuantity(props.ingredient.stock));
+    if (isOpen && props.item) {
+        ({ whole: whole.value, fraction: fraction.value } = splitQuantity(props.item.stock));
     }
 });
 
 async function save() {
     saving.value = true;
-    const saved = await toast.attempt(() => api.put(`/api/ingredients/${props.ingredient.id}/stock`, { stock: total.value }));
+    const saved = await toast.attempt(() => api.put(`/api/items/${props.item.id}/stock`, { stock: total.value }));
     saving.value = false;
     if (saved) open.value = false;
 }
 </script>
 
 <template>
-    <BottomSheet v-model:open="open" :title="t('pantry.stock.title', { name: ingredient?.name ?? '' })">
-        <template v-if="ingredient">
+    <BottomSheet v-model:open="open" :title="t('pantry.stock.title', { name: item?.name ?? '' })">
+        <template v-if="item">
             <p class="stock-sheet__summary" data-test="stock-summary">{{ summary }}</p>
             <FormField :label="t('pantry.stock.whole')" as="div">
                 <QuantityStepper v-model="whole" :label="t('pantry.stock.whole')" :decrease-label="t('pantry.stock.less')" :increase-label="t('pantry.stock.more')" :step="TWELFTHS_PER_UNIT" :max="MAX_TWELFTHS - TWELFTHS_PER_UNIT" />

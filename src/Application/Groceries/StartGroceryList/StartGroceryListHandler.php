@@ -10,7 +10,7 @@ use App\Application\Transaction;
 use App\Domain\Groceries\Exception\GroceryListAlreadyOpen;
 use App\Domain\Groceries\GroceryList;
 use App\Domain\Groceries\GroceryListRepository;
-use App\Domain\Pantry\IngredientRepository;
+use App\Domain\Stock\ItemRepository;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\Uid\Ulid;
 
@@ -18,7 +18,7 @@ final readonly class StartGroceryListHandler
 {
     public function __construct(
         private GroceryListRepository $lists,
-        private IngredientRepository $ingredients,
+        private ItemRepository $items,
         private CurrentUser $currentUser,
         private ClockInterface $clock,
         private Transaction $transaction,
@@ -32,7 +32,7 @@ final readonly class StartGroceryListHandler
         }
 
         $list = new GroceryList(
-            array_map(fn (string $id) => $this->ingredients->get(Ulid::fromString($id)), $command->ingredientIds),
+            array_map(fn (string $id) => $this->items->get(Ulid::fromString($id)), $command->itemIds),
             $this->currentUser->get(),
             $this->clock->now(),
         );

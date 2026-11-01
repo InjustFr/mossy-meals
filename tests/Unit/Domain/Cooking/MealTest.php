@@ -13,10 +13,11 @@ use App\Domain\Cooking\MealLine;
 use App\Domain\Cooking\MealType;
 use App\Domain\Cooking\Portion;
 use App\Domain\Identity\User;
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Quantity;
-use App\Domain\Pantry\Unit;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Kind;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Quantity;
+use App\Domain\Stock\Unit;
 use PHPUnit\Framework\TestCase;
 
 final class MealTest extends TestCase
@@ -45,7 +46,7 @@ final class MealTest extends TestCase
     {
         $pasta = self::ingredient('Pasta', 36, Unit::Pack);
         $meal = self::meal([new Portion($pasta, Quantity::ofTwelfths(18))]);
-        $pasta->describe('Penne', Location::Fridge, Unit::Box, false, null);
+        $pasta->describe('Penne', Kind::Ingredient, Location::Fridge, Unit::Box, false, null);
 
         [$line] = $meal->lines();
 
@@ -156,9 +157,9 @@ final class MealTest extends TestCase
         return User::join(strtolower($name), strtolower($name).'@muhmeal.test', $name, new \DateTimeImmutable());
     }
 
-    private static function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): Ingredient
+    private static function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): Item
     {
-        $ingredient = Ingredient::add($name, Location::Pantry, $unit, $manual, null, new \DateTimeImmutable());
+        $ingredient = Item::add($name, Kind::Ingredient, Location::Pantry, $unit, $manual, null, new \DateTimeImmutable());
         $ingredient->setStock(Quantity::ofTwelfths($stock));
 
         return $ingredient;

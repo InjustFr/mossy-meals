@@ -15,7 +15,7 @@ final class AuthenticationEntryPointTest extends TestCase
 {
     public function testSignedOutApiCallsAreUnauthorized(): void
     {
-        $response = $this->entryPoint()->start(Request::create('/api/ingredients'));
+        $response = $this->entryPoint()->start(Request::create('/api/items'));
 
         self::assertSame(401, $response->getStatusCode());
         self::assertSame('application/problem+json', $response->headers->get('Content-Type'));

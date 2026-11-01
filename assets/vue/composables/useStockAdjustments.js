@@ -14,9 +14,9 @@ export function useStockAdjustments() {
 
     const pendingOf = (id) => (unsent[id] ?? 0) + (inFlight[id] ?? 0);
 
-    function view(ingredient) {
-        const stock = ingredient.stock + pendingOf(ingredient.id);
-        return { ...ingredient, stock, out: stock === 0, runningLow: stock <= ingredient.lowAt };
+    function view(item) {
+        const stock = item.stock + pendingOf(item.id);
+        return { ...item, stock, out: stock === 0, runningLow: stock <= item.lowAt };
     }
 
     async function send(id) {
@@ -26,7 +26,7 @@ export function useStockAdjustments() {
         if (by === 0) return;
         inFlight[id] = (inFlight[id] ?? 0) + by;
         try {
-            await api.post(`/api/ingredients/${id}/adjust`, { by });
+            await api.post(`/api/items/${id}/adjust`, { by });
         } catch (error) {
             toast.error(error.message);
         } finally {

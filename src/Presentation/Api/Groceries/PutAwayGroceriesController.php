@@ -18,7 +18,7 @@ final class PutAwayGroceriesController extends AbstractController
     public function __invoke(#[MapRequestPayload] PutAwayPayload $payload, PutAwayGroceriesHandler $putAwayGroceries): Response
     {
         $putAwayGroceries(new PutAwayGroceries(array_map(
-            static fn (BoughtPayload $bought): BoughtInput => new BoughtInput($bought->ingredientId, $bought->amount),
+            static fn (BoughtPayload $bought): BoughtInput => new BoughtInput($bought->itemId, $bought->amount),
             $payload->bought,
         )));
 

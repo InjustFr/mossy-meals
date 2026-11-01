@@ -23,7 +23,7 @@ test('the account menu fits a phone', async ({ page }) => {
     expect(x + width).toBeLessThanOrEqual(page.viewportSize().width);
 });
 
-test('the pantry rows and the ingredient sheet fit a phone', async ({ page }) => {
+test('the pantry rows and the item sheet fit a phone', async ({ page }) => {
     await signIn(page);
     await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Pantry' }).click();
     await expect(page.getByRole('button', { name: 'One more Milk' })).toBeVisible();
@@ -36,7 +36,7 @@ test('the pantry rows and the ingredient sheet fit a phone', async ({ page }) =>
     }
 
     await page.getByRole('button', { name: 'Milk (edit)', exact: true }).click();
-    const sheet = page.getByRole('dialog', { name: 'Edit ingredient' });
+    const sheet = page.getByRole('dialog', { name: 'Edit item' });
     await expect(sheet).toBeVisible();
     const viewport = page.viewportSize();
     await expect.poll(async () => {
@@ -90,9 +90,9 @@ test('the shop screen fits a phone with big tap targets', async ({ page }) => {
         return response.status === 204 ? null : response.json();
     }, { method, url, body });
     if ((await send('GET', '/api/grocery-list')) !== null) await send('POST', '/api/grocery-list/put-away', { bought: [] });
-    const ingredients = await send('GET', '/api/ingredients');
-    const ids = ['Yoghurt', 'Cheddar', 'Rice', 'Peas'].map((name) => ingredients.find((ingredient) => ingredient.name === name).id);
-    await send('POST', '/api/grocery-list', { ingredientIds: ids });
+    const items = await send('GET', '/api/items');
+    const ids = ['Yoghurt', 'Cheddar', 'Rice', 'Peas'].map((name) => items.find((item) => item.name === name).id);
+    await send('POST', '/api/grocery-list', { itemIds: ids });
 
     await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Pantry' }).click();
     await page.getByTestId('go-shopping').click();

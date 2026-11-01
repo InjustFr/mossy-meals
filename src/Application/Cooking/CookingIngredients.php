@@ -6,13 +6,13 @@ namespace App\Application\Cooking;
 
 use App\Domain\Cooking\Need;
 use App\Domain\Cooking\Portion;
-use App\Domain\Pantry\IngredientRepository;
-use App\Domain\Pantry\Quantity;
+use App\Domain\Stock\ItemRepository;
+use App\Domain\Stock\Quantity;
 use Symfony\Component\Uid\Ulid;
 
 final readonly class CookingIngredients
 {
-    public function __construct(private IngredientRepository $ingredients)
+    public function __construct(private ItemRepository $ingredients)
     {
     }
 

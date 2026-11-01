@@ -7,9 +7,9 @@ namespace App\Application\Groceries\StartGroceryList;
 final readonly class StartGroceryList
 {
     /**
-     * @param list<string> $ingredientIds
+     * @param list<string> $itemIds
      */
-    public function __construct(public array $ingredientIds)
+    public function __construct(public array $itemIds)
     {
     }
 }

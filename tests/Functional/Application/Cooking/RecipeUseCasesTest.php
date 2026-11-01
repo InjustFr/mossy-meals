@@ -16,12 +16,12 @@ use App\Application\Cooking\RemoveRecipe\RemoveRecipeHandler;
 use App\Application\Cooking\UsedInput;
 use App\Application\Cooking\WriteRecipe\WriteRecipe;
 use App\Application\Cooking\WriteRecipe\WriteRecipeHandler;
-use App\Application\Pantry\AddIngredient\AddIngredient;
-use App\Application\Pantry\AddIngredient\AddIngredientHandler;
-use App\Application\Pantry\IngredientQueries;
-use App\Application\Pantry\IngredientView;
-use App\Application\Pantry\RemoveIngredient\RemoveIngredient;
-use App\Application\Pantry\RemoveIngredient\RemoveIngredientHandler;
+use App\Application\Stock\AddItem\AddItem;
+use App\Application\Stock\AddItem\AddItemHandler;
+use App\Application\Stock\ItemQueries;
+use App\Application\Stock\ItemView;
+use App\Application\Stock\RemoveItem\RemoveItem;
+use App\Application\Stock\RemoveItem\RemoveItemHandler;
 use App\Domain\Cooking\Exception\EmptyRecipeName;
 use App\Domain\Cooking\Exception\IngredientListedTwice;
 use App\Domain\Cooking\Exception\NotAPrep;
@@ -29,10 +29,10 @@ use App\Domain\Cooking\Exception\RecipeNameTaken;
 use App\Domain\Cooking\Exception\RecipeNeedsIngredient;
 use App\Domain\Cooking\Exception\ZeroQuantity;
 use App\Domain\Cooking\Exception\ZeroYield;
-use App\Domain\Pantry\Exception\IngredientInUse;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Unit;
 use App\Domain\Shared\Exception\NotFound;
+use App\Domain\Stock\Exception\ItemInUse;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Unit;
 use App\Tests\Support\FreezesClock;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -158,7 +158,7 @@ final class RecipeUseCasesTest extends KernelTestCase
     {
         $id = new Ulid();
 
-        $this->expectExceptionObject(new NotFound('ingredient', (string) $id));
+        $this->expectExceptionObject(new NotFound('item', (string) $id));
 
         self::getContainer()->get(WriteRecipeHandler::class)(new WriteRecipe('Ghost', [new RecipeLineInput((string) $id, null)]));
     }
@@ -228,7 +228,7 @@ final class RecipeUseCasesTest extends KernelTestCase
         self::getContainer()->get(EntityManagerInterface::class)->clear();
 
         self::assertSame(['Soup'], array_map(static fn (RecipeView $view): string => $view->name, self::getContainer()->get(RecipeQueries::class)->all()));
-        self::assertSame(['Pasta'], array_map(static fn (IngredientView $view): string => $view->name, self::getContainer()->get(IngredientQueries::class)->all()));
+        self::assertSame(['Pasta'], array_map(static fn (ItemView $view): string => $view->name, self::getContainer()->get(ItemQueries::class)->all()));
     }
 
     public function testRemoveOfAnUnknownRecipeIsNotFound(): void
@@ -251,7 +251,7 @@ final class RecipeUseCasesTest extends KernelTestCase
         self::getContainer()->get(EntityManagerInterface::class)->clear();
 
         self::assertSame(24, $view->output?->stock);
-        self::assertSame([6, 9, 24], array_map(static fn (IngredientView $ingredient): int => $ingredient->stock, self::stocks('Gluten', 'Spices', 'Seitan')));
+        self::assertSame([6, 9, 24], array_map(static fn (ItemView $ingredient): int => $ingredient->stock, self::stocks('Gluten', 'Spices', 'Seitan')));
     }
 
     public function testMakePrepNeverRefusesAShortage(): void
@@ -262,7 +262,7 @@ final class RecipeUseCasesTest extends KernelTestCase
 
         $this->make($recipe, [new UsedInput($gluten->id, 36)], 12);
 
-        self::assertSame([0, 24], array_map(static fn (IngredientView $ingredient): int => $ingredient->stock, self::stocks('Gluten', 'Seitan')));
+        self::assertSame([0, 24], array_map(static fn (ItemView $ingredient): int => $ingredient->stock, self::stocks('Gluten', 'Seitan')));
     }
 
     public function testMakePrepWritesNoMeal(): void
@@ -338,7 +338,7 @@ final class RecipeUseCasesTest extends KernelTestCase
         $this->write('Pasta bake', [$this->line($pasta)]);
         $this->write('Aglio', [$this->line($pasta)]);
 
-        $this->expectExceptionObject(new IngredientInUse('Pasta', 'Aglio, Pasta bake'));
+        $this->expectExceptionObject(new ItemInUse('Pasta', 'Aglio, Pasta bake'));
 
         $this->remove($pasta);
     }
@@ -349,7 +349,7 @@ final class RecipeUseCasesTest extends KernelTestCase
         $seitan = $this->ingredient('Seitan', 0);
         $this->write('Seitan', [$this->line($gluten)], $seitan, 12);
 
-        $this->expectExceptionObject(new IngredientInUse('Seitan', 'Seitan'));
+        $this->expectExceptionObject(new ItemInUse('Seitan', 'Seitan'));
 
         $this->remove($seitan);
     }
@@ -364,7 +364,7 @@ final class RecipeUseCasesTest extends KernelTestCase
         $this->remove($pasta);
         self::getContainer()->get(EntityManagerInterface::class)->clear();
 
-        self::assertSame(['Rice'], array_map(static fn (IngredientView $view): string => $view->name, self::getContainer()->get(IngredientQueries::class)->all()));
+        self::assertSame(['Rice'], array_map(static fn (ItemView $view): string => $view->name, self::getContainer()->get(ItemQueries::class)->all()));
     }
 
     public function testAnIngredientNoRecipeUsesCanBeRemoved(): void
@@ -376,15 +376,15 @@ final class RecipeUseCasesTest extends KernelTestCase
         $this->remove($rice);
         self::getContainer()->get(EntityManagerInterface::class)->clear();
 
-        self::assertSame(['Pasta'], array_map(static fn (IngredientView $view): string => $view->name, self::getContainer()->get(IngredientQueries::class)->all()));
+        self::assertSame(['Pasta'], array_map(static fn (ItemView $view): string => $view->name, self::getContainer()->get(ItemQueries::class)->all()));
     }
 
-    private function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): IngredientView
+    private function ingredient(string $name, int $stock, Unit $unit = Unit::Piece, bool $manual = false): ItemView
     {
-        return self::getContainer()->get(AddIngredientHandler::class)(new AddIngredient($name, Location::Pantry, $unit, $manual, null, $stock));
+        return self::getContainer()->get(AddItemHandler::class)(new AddItem($name, Location::Pantry, $unit, $manual, null, $stock));
     }
 
-    private function line(IngredientView $ingredient, ?int $amount = null): RecipeLineInput
+    private function line(ItemView $ingredient, ?int $amount = null): RecipeLineInput
     {
         return new RecipeLineInput($ingredient->id, $amount);
     }
@@ -392,7 +392,7 @@ final class RecipeUseCasesTest extends KernelTestCase
     /**
      * @param list<RecipeLineInput> $lines
      */
-    private function write(string $name, array $lines, ?IngredientView $output = null, ?int $yield = null): RecipeView
+    private function write(string $name, array $lines, ?ItemView $output = null, ?int $yield = null): RecipeView
     {
         return self::getContainer()->get(WriteRecipeHandler::class)(new WriteRecipe($name, $lines, $output?->id, $yield));
     }
@@ -400,7 +400,7 @@ final class RecipeUseCasesTest extends KernelTestCase
     /**
      * @param list<RecipeLineInput> $lines
      */
-    private function edit(RecipeView $recipe, string $name, array $lines, ?IngredientView $output = null, ?int $yield = null): RecipeView
+    private function edit(RecipeView $recipe, string $name, array $lines, ?ItemView $output = null, ?int $yield = null): RecipeView
     {
         return self::getContainer()->get(EditRecipeHandler::class)(new EditRecipe(Ulid::fromString($recipe->id), $name, $lines, $output?->id, $yield));
     }
@@ -413,9 +413,9 @@ final class RecipeUseCasesTest extends KernelTestCase
         return self::getContainer()->get(MakePrepHandler::class)(new MakePrep(Ulid::fromString($recipe->id), $used, $made));
     }
 
-    private function remove(IngredientView $ingredient): void
+    private function remove(ItemView $ingredient): void
     {
-        self::getContainer()->get(RemoveIngredientHandler::class)(new RemoveIngredient(Ulid::fromString($ingredient->id)));
+        self::getContainer()->get(RemoveItemHandler::class)(new RemoveItem(Ulid::fromString($ingredient->id)));
     }
 
     private function recipeNamed(string $name): RecipeView
@@ -430,15 +430,15 @@ final class RecipeUseCasesTest extends KernelTestCase
     }
 
     /**
-     * @return list<IngredientView>
+     * @return list<ItemView>
      */
     private static function stocks(string ...$names): array
     {
         $byName = [];
-        foreach (self::getContainer()->get(IngredientQueries::class)->all() as $view) {
+        foreach (self::getContainer()->get(ItemQueries::class)->all() as $view) {
             $byName[$view->name] = $view;
         }
 
-        return array_map(static fn (string $name): IngredientView => $byName[$name], array_values($names));
+        return array_map(static fn (string $name): ItemView => $byName[$name], array_values($names));
     }
 }

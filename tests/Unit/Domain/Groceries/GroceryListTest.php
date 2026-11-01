@@ -11,12 +11,13 @@ use App\Domain\Groceries\Exception\EmptyGroceryList;
 use App\Domain\Groceries\GroceryItem;
 use App\Domain\Groceries\GroceryList;
 use App\Domain\Identity\User;
-use App\Domain\Pantry\Exception\QuantityOutOfRange;
-use App\Domain\Pantry\Ingredient;
-use App\Domain\Pantry\Location;
-use App\Domain\Pantry\Quantity;
-use App\Domain\Pantry\Unit;
 use App\Domain\Shared\Exception\NotFound;
+use App\Domain\Stock\Exception\QuantityOutOfRange;
+use App\Domain\Stock\Item;
+use App\Domain\Stock\Kind;
+use App\Domain\Stock\Location;
+use App\Domain\Stock\Quantity;
+use App\Domain\Stock\Unit;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Ulid;
 
@@ -30,12 +31,12 @@ final class GroceryListTest extends TestCase
 
         $list = new GroceryList([$milk, $eggs], $louis, new \DateTimeImmutable('2026-10-06 08:00'));
 
-        self::assertSame([[$milk->id(), false], [$eggs->id(), false]], array_map(static fn (GroceryItem $item): array => [$item->ingredient()->id(), $item->isTicked()], $list->items()));
+        self::assertSame([[$milk->id(), false], [$eggs->id(), false]], array_map(static fn (GroceryItem $item): array => [$item->item()->id(), $item->isTicked()], $list->items()));
         self::assertSame($louis, $list->startedBy());
         self::assertSame('2026-10-06 08:00', $list->startedAt()->format('Y-m-d H:i'));
     }
 
-    public function testAListNeedsAtLeastOneIngredient(): void
+    public function testAListNeedsAtLeastOneItem(): void
     {
         $this->expectExceptionObject(new EmptyGroceryList());
 
@@ -61,7 +62,7 @@ final class GroceryListTest extends TestCase
         $list->add($milk);
         $list->add($eggs);
 
-        self::assertSame([[$milk->id(), true], [$eggs->id(), false]], array_map(static fn (GroceryItem $item): array => [$item->ingredient()->id(), $item->isTicked()], $list->items()));
+        self::assertSame([[$milk->id(), true], [$eggs->id(), false]], array_map(static fn (GroceryItem $item): array => [$item->item()->id(), $item->isTicked()], $list->items()));
     }
 
     public function testTickingSetsAValueAndNeverToggles(): void
@@ -136,9 +137,9 @@ final class GroceryListTest extends TestCase
         $list->putAway([new Portion($milk, Quantity::ofTwelfths(1))]);
     }
 
-    private static function ingredient(string $name, int $stock = 0): Ingredient
+    private static function ingredient(string $name, int $stock = 0): Item
     {
-        $ingredient = Ingredient::add($name, Location::Fridge, Unit::Carton, false, null, new \DateTimeImmutable());
+        $ingredient = Item::add($name, Kind::Ingredient, Location::Fridge, Unit::Carton, false, null, new \DateTimeImmutable());
         $ingredient->setStock(Quantity::ofTwelfths($stock));
 
         return $ingredient;

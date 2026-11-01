@@ -4,11 +4,11 @@ import { MAX_TWELFTHS, TWELFTHS_PER_UNIT } from '../pantry/quantity.js';
 const byName = (a, b) => a.name.localeCompare(b.name);
 const tickedLast = (a, b) => Number(a.ticked === true) - Number(b.ticked === true);
 
-export function prepareRows(ingredients, extraIds) {
+export function prepareRows(items, extraIds) {
     const extras = new Set(extraIds);
 
-    return ingredients
-        .filter((ingredient) => ingredient.suggested || extras.has(ingredient.id))
+    return items
+        .filter((item) => item.suggested || extras.has(item.id))
         .sort((a, b) => Number(b.stock === 0) - Number(a.stock === 0) || byName(a, b));
 }
 
@@ -20,7 +20,7 @@ export function groupByLocation(rows) {
 
 export function boughtLine(source) {
     return {
-        ingredientId: source.ingredientId ?? source.id,
+        itemId: source.itemId ?? source.id,
         name: source.name,
         unit: source.unit,
         location: source.location,
@@ -34,3 +34,5 @@ export const boughtStep = () => TWELFTHS_PER_UNIT;
 export const boughtMax = (line) => MAX_TWELFTHS - line.stock;
 
 export const stockAfterBuying = (line) => Math.min(MAX_TWELFTHS, line.stock + line.amount);
+
+export const boughtOf = (lines) => lines.filter((line) => line.amount > 0).map((line) => ({ itemId: line.itemId, amount: line.amount }));

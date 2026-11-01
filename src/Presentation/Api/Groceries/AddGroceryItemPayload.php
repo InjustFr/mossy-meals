@@ -11,7 +11,7 @@ final readonly class AddGroceryItemPayload
     public function __construct(
         #[Assert\NotBlank(message: 'id.invalid')]
         #[Assert\Ulid(message: 'id.invalid')]
-        public string $ingredientId = '',
+        public string $itemId = '',
     ) {
     }
 }

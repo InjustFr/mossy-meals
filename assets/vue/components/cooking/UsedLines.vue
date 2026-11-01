@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { currentLanguage } from '../../i18n/locale.js';
 import { isShort, stepFor, stockAfter, withIngredient } from '../../cooking/lines.js';
 import { describeQuantity, formatQuantity } from '../../pantry/quantity.js';
-import IngredientPicker from '../pantry/IngredientPicker.vue';
+import ItemPicker from '../pantry/ItemPicker.vue';
 import QuantityStepper from '../pantry/QuantityStepper.vue';
 import IconButton from '../ui/IconButton.vue';
 
@@ -49,7 +49,7 @@ const preview = (line) => `${formatQuantity(line.stock, currentLanguage())} → 
                 </div>
             </li>
         </ul>
-        <IngredientPicker :exclude="used" food @pick="(ingredient) => (lines = withIngredient(lines, ingredient))" />
+        <ItemPicker :exclude="used" ingredients-only @pick="(ingredient) => (lines = withIngredient(lines, ingredient))" />
     </div>
 </template>
 

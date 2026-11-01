@@ -10,7 +10,7 @@ final readonly class GroceryItemView
 {
     private function __construct(
         public string $id,
-        public string $ingredientId,
+        public string $itemId,
         public string $name,
         public string $unit,
         public string $location,
@@ -21,15 +21,15 @@ final readonly class GroceryItemView
 
     public static function of(GroceryItem $item): self
     {
-        $ingredient = $item->ingredient();
+        $stocked = $item->item();
 
         return new self(
             (string) $item->id(),
-            (string) $ingredient->id(),
-            $ingredient->name(),
-            $ingredient->unit()->value,
-            $ingredient->location()->value,
-            $ingredient->stock()->twelfths(),
+            (string) $stocked->id(),
+            $stocked->name(),
+            $stocked->unit()->value,
+            $stocked->location()->value,
+            $stocked->stock()->twelfths(),
             $item->isTicked(),
         );
     }

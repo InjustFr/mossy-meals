@@ -21,7 +21,7 @@ final readonly class DoctrineGroceryQueries implements GroceryQueries
             ->select('g', 'i', 'n', 'u')
             ->from(GroceryList::class, 'g')
             ->leftJoin('g.items', 'i')
-            ->leftJoin('i.ingredient', 'n')
+            ->leftJoin('i.item', 'n')
             ->innerJoin('g.startedBy', 'u')
             ->getQuery()
             ->getResult();

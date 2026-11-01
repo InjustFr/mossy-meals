@@ -1,16 +1,20 @@
 {
     "empty": {
         "title": "The shelves are bare",
-        "hint": "Everything in your fridge, freezer and pantry will be listed here. Type a name above to add the first ingredient."
+        "hint": "Everything in your fridge, freezer and pantry will be listed here. Type a name above to add the first item."
     },
     "noMatch": {
         "title": "Nothing here",
-        "hint": "No ingredient matches. Try another place or another name."
+        "hint": "No item matches. Try another place or another name."
     },
     "search": {
-        "label": "Search or add an ingredient",
-        "placeholder": "Search or add an ingredient",
+        "label": "Search or add an item",
+        "placeholder": "Search or add an item",
         "add": "Add “{name}”"
+    },
+    "kind": {
+        "ingredient": "Ingredient",
+        "household": "Household item"
     },
     "location": {
         "label": "Place",
@@ -18,18 +22,25 @@
         "fridge": "Fridge",
         "freezer": "Freezer",
         "pantry": "Pantry",
-        "household": "Home"
+        "home": "Home"
     },
     "badge": {
         "out": "Out",
         "low": "Low"
     },
     "picker": {
-        "add": "Add ingredient",
-        "search": "Search ingredients",
+        "items": {
+            "add": "Add item",
+            "search": "Search items",
+            "none": "No item matches"
+        },
+        "ingredients": {
+            "add": "Add ingredient",
+            "search": "Search ingredients",
+            "none": "No ingredient matches"
+        },
         "close": "Close the search",
         "left": "{amount} left",
-        "none": "No ingredient matches",
         "create": "Add “{name}”"
     },
     "row": {
@@ -48,9 +59,11 @@
         "save": "Set stock"
     },
     "sheet": {
-        "createTitle": "New ingredient",
-        "editTitle": "Edit ingredient",
+        "createTitle": "New item",
+        "createIngredientTitle": "New ingredient",
+        "editTitle": "Edit item",
         "name": "Name",
+        "kind": "What it is",
         "location": "Where it lives",
         "unit": "Counted in",
         "stock": "How much do you have?",
@@ -70,7 +83,7 @@
         "added": "{name} added",
         "delete": "Delete",
         "deleteTitle": "Delete {name}?",
-        "deleteMessage": "The ingredient and its stock are removed. This cannot be undone.",
+        "deleteMessage": "The item and its stock are removed. This cannot be undone.",
         "months": "Buy in",
         "monthsHint": "Suggested for the groceries only in these months. None means never.",
         "allYear": "All year",
