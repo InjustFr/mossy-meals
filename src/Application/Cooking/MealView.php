@@ -7,6 +7,7 @@ namespace App\Application\Cooking;
 use App\Application\Identity\MemberView;
 use App\Domain\Cooking\Meal;
 use App\Domain\Identity\User;
+use App\Domain\Shared\Alphabetical;
 use App\Domain\Shared\Day;
 
 final readonly class MealView
@@ -48,9 +49,7 @@ final readonly class MealView
      */
     private static function byName(array $users): array
     {
-        usort($users, static fn (User $a, User $b): int => [mb_strtolower($a->displayName()), (string) $a->id()] <=> [mb_strtolower($b->displayName()), (string) $b->id()]);
-
-        return $users;
+        return Alphabetical::sort($users, static fn (User $user): string => $user->displayName(), static fn (User $user): string => (string) $user->id());
     }
 
     private static function member(User $user): MemberView

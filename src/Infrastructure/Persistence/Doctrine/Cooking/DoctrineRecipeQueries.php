@@ -7,6 +7,7 @@ namespace App\Infrastructure\Persistence\Doctrine\Cooking;
 use App\Application\Cooking\RecipeQueries;
 use App\Application\Cooking\RecipeViews;
 use App\Domain\Cooking\Recipe;
+use App\Domain\Shared\Alphabetical;
 use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class DoctrineRecipeQueries implements RecipeQueries
@@ -28,11 +29,9 @@ final readonly class DoctrineRecipeQueries implements RecipeQueries
             ->leftJoin('i.variantOf', 'm')
             ->leftJoin('m.variants', 'mv')
             ->leftJoin('i.variants', 'iv')
-            ->orderBy('LOWER(r.name)')
-            ->addOrderBy('r.id')
             ->getQuery()
             ->getResult();
 
-        return $this->views->all($recipes);
+        return $this->views->all(Alphabetical::sort($recipes, static fn (Recipe $recipe): string => $recipe->name(), static fn (Recipe $recipe): string => (string) $recipe->id()));
     }
 }

@@ -7,6 +7,7 @@ namespace App\Infrastructure\Persistence\Doctrine\Pantry;
 use App\Application\Pantry\IngredientQueries;
 use App\Application\Pantry\IngredientViews;
 use App\Domain\Pantry\Ingredient;
+use App\Domain\Shared\Alphabetical;
 use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class DoctrineIngredientQueries implements IngredientQueries
@@ -22,11 +23,9 @@ final readonly class DoctrineIngredientQueries implements IngredientQueries
         $ingredients = $this->entityManager->createQueryBuilder()
             ->select('i')
             ->from(Ingredient::class, 'i')
-            ->orderBy('LOWER(i.name)')
-            ->addOrderBy('i.id')
             ->getQuery()
             ->getResult();
 
-        return $this->views->all($ingredients);
+        return $this->views->all(Alphabetical::sort($ingredients, static fn (Ingredient $ingredient): string => $ingredient->name(), static fn (Ingredient $ingredient): string => (string) $ingredient->id()));
     }
 }

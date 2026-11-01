@@ -7,6 +7,7 @@ namespace App\Application\Groceries;
 use App\Application\Identity\MemberView;
 use App\Domain\Groceries\GroceryItem;
 use App\Domain\Groceries\GroceryList;
+use App\Domain\Shared\Alphabetical;
 
 final readonly class GroceryListView
 {
@@ -23,8 +24,7 @@ final readonly class GroceryListView
 
     public static function of(GroceryList $list): self
     {
-        $items = $list->items();
-        usort($items, static fn (GroceryItem $a, GroceryItem $b): int => [mb_strtolower($a->ingredient()->name()), (string) $a->id()] <=> [mb_strtolower($b->ingredient()->name()), (string) $b->id()]);
+        $items = Alphabetical::sort($list->items(), static fn (GroceryItem $item): string => $item->ingredient()->name(), static fn (GroceryItem $item): string => (string) $item->id());
 
         return new self(
             (string) $list->id(),

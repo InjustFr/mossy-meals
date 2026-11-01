@@ -8,6 +8,7 @@ use App\Domain\Cooking\Recipe;
 use App\Domain\Cooking\RecipeLine;
 use App\Domain\Cooking\RecipeRepository;
 use App\Domain\Pantry\Ingredient;
+use App\Domain\Shared\Alphabetical;
 use App\Domain\Shared\Exception\NotFound;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Types\UlidType;
@@ -53,15 +54,14 @@ final readonly class DoctrineRecipeRepository implements RecipeRepository
 
     public function using(Ingredient $ingredient): array
     {
-        return $this->entityManager->createQueryBuilder()
+        return self::byName($this->entityManager->createQueryBuilder()
             ->select('r')
             ->from(Recipe::class, 'r')
             ->where('r.output = :ingredient')
             ->orWhere('EXISTS (SELECT l.id FROM '.RecipeLine::class.' l WHERE l.recipe = r AND l.ingredient = :ingredient)')
             ->setParameter('ingredient', $ingredient->id(), UlidType::NAME)
-            ->orderBy('LOWER(r.name)')
             ->getQuery()
-            ->getResult();
+            ->getResult());
     }
 
     public function outputIds(): array
@@ -79,7 +79,7 @@ final readonly class DoctrineRecipeRepository implements RecipeRepository
 
     public function preps(): array
     {
-        return $this->entityManager->createQueryBuilder()
+        return self::byName($this->entityManager->createQueryBuilder()
             ->select('r', 'l', 'i', 'o', 'm', 'mv', 'iv')
             ->from(Recipe::class, 'r')
             ->join('r.output', 'o')
@@ -88,9 +88,17 @@ final readonly class DoctrineRecipeRepository implements RecipeRepository
             ->leftJoin('i.variantOf', 'm')
             ->leftJoin('m.variants', 'mv')
             ->leftJoin('i.variants', 'iv')
-            ->orderBy('LOWER(r.name)')
-            ->addOrderBy('r.id')
             ->getQuery()
-            ->getResult();
+            ->getResult());
+    }
+
+    /**
+     * @param list<Recipe> $recipes
+     *
+     * @return list<Recipe>
+     */
+    private static function byName(array $recipes): array
+    {
+        return Alphabetical::sort($recipes, static fn (Recipe $recipe): string => $recipe->name(), static fn (Recipe $recipe): string => (string) $recipe->id());
     }
 }
