@@ -295,6 +295,8 @@ test('an ingredient is deleted after a confirmation', async ({ page }) => {
     await page.getByRole('dialog', { name: 'Edit item' }).getByRole('button', { name: 'Delete' }).click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toContainText(`Delete ${name}?`);
+    const layer = (dialog) => dialog.evaluate((element) => Number(getComputedStyle(element.closest('.modal') ?? element).zIndex));
+    expect(await layer(confirmation)).toBeGreaterThan(await layer(page.getByRole('dialog', { name: 'Edit item', includeHidden: true })));
     await confirmation.getByRole('button', { name: 'Delete' }).click();
 
     await expect(row(page, name)).toHaveCount(0);
