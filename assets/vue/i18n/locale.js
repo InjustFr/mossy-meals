@@ -13,3 +13,9 @@ export function currentLanguage() {
 export function intlLocale() {
     return LANGUAGES.find((known) => known.value === currentLanguage()).intl;
 }
+
+export function chooseLanguage(language) {
+    const secure = window.location.protocol === 'https:' ? '; secure' : '';
+    document.cookie = `locale=${language}; path=/; max-age=31536000; samesite=lax${secure}`;
+    window.location.reload();
+}

@@ -69,6 +69,16 @@ test('the credits list the fonts, icons and libraries', async ({ page }) => {
     }
 });
 
+test('the settings switch the language', async ({ page }) => {
+    await signIn(page);
+    const menu = await openAccountMenu(page);
+    await menu.getByRole('menuitem', { name: 'Settings' }).click();
+    await expect(page).toHaveURL('/settings');
+    await page.getByRole('button', { name: 'Français' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Réglages' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+});
+
 test('signing out also signs out of the mossyleaf account', async ({ page }) => {
     await signIn(page);
     const menu = await openAccountMenu(page);

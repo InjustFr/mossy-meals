@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { RouterLink } from 'vue-router';
-import { PhArrowSquareOut, PhHeart, PhSignOut } from '@phosphor-icons/vue';
+import { PhArrowSquareOut, PhGear, PhHeart, PhSignOut } from '@phosphor-icons/vue';
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui';
 import { useI18n } from 'vue-i18n';
 import { useSession } from '../../composables/useSession.js';
@@ -24,6 +24,9 @@ const initial = computed(() => (Array.from(session.displayName)[0] ?? '').toUppe
                         <span class="account-menu__email">{{ session.email }}</span>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator class="popover__separator" />
+                    <DropdownMenuItem as-child>
+                        <RouterLink to="/settings" class="popover__item"><PhGear size="1.25rem" weight="duotone" aria-hidden="true" />{{ t('nav.settings') }}</RouterLink>
+                    </DropdownMenuItem>
                     <DropdownMenuItem as-child>
                         <RouterLink to="/credits" class="popover__item"><PhHeart size="1.25rem" weight="duotone" aria-hidden="true" />{{ t('nav.credits') }}</RouterLink>
                     </DropdownMenuItem>

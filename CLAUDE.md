@@ -89,7 +89,7 @@ A WebView shell of the production site: Kotlin, no Compose, no widget, `cloud.du
 ## Differences from MossyDew
 
 - One shared kitchen instead of owner scoping; no `OwnerScope` and no `AtomicChange` (two requests on the same stock within milliseconds can still lose one change, accepted for two people).
-- No time zone, theme, language or device-token settings, no widget, no iOS, no PWA or service worker.
+- No time zone, theme or device-token settings (language is a per-device cookie set on `/settings`), no widget, no iOS, no PWA or service worker.
 - Security headers, the sign-in rate limit, `robots.txt` and dependency audits are new here.
 - Phosphor icons, Fredoka and Nunito and a fixed palette instead of Lucide, Patua One and Inter and user themes.
 

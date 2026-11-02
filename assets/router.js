@@ -9,6 +9,7 @@ import PutAwayPage from './vue/pages/PutAwayPage.vue';
 import RecipeEditPage from './vue/pages/RecipeEditPage.vue';
 import RecipePage from './vue/pages/RecipePage.vue';
 import RecipesPage from './vue/pages/RecipesPage.vue';
+import SettingsPage from './vue/pages/SettingsPage.vue';
 
 export const router = createRouter({
     history: createWebHistory(),
@@ -22,6 +23,7 @@ export const router = createRouter({
         { path: '/groceries', name: 'groceries', component: GroceriesPage },
         { path: '/groceries/put-away', name: 'put-away', component: PutAwayPage },
         { path: '/history', name: 'history', component: HistoryPage },
+        { path: '/settings', name: 'settings', component: SettingsPage },
         { path: '/credits', name: 'credits', component: CreditsPage },
         { path: '/:path(.*)*', name: 'not-found', component: NotFoundPage },
     ],
