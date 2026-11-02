@@ -32,6 +32,7 @@
             "title": "Rien de coché",
             "hint": "Rien ne sera ajouté au stock. Vous pouvez encore ajouter ci-dessous ce que vous avez acheté."
         },
+        "fraction": "Fraction d’unité de {name}",
         "group": "Quantité achetée de {name}",
         "less": "Acheter moins de {name}",
         "more": "Acheter plus de {name}",

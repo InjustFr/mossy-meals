@@ -150,6 +150,8 @@ test('a shopping trip is prepared, shared between two phones and put away with a
     await expect(line(page, oats).getByTestId('bought-preview')).toHaveText('0 → 1 bag');
     await line(page, milk).getByRole('button', { name: `Buy more ${milk}` }).click();
     await expect(line(page, milk).getByTestId('bought-preview')).toHaveText('¼ → 2¼ cartons');
+    await line(page, milk).getByRole('button', { name: '½', exact: true }).click();
+    await expect(line(page, milk).getByTestId('bought-preview')).toHaveText('¼ → 2¾ cartons');
     await expect(line(page, 'Yoghurt')).toHaveCount(0);
 
     await page.getByTestId('toggle-unbought').click();
@@ -165,7 +167,7 @@ test('a shopping trip is prepared, shared between two phones and put away with a
     await expect(page).toHaveURL(/\/groceries$/);
     await expect(page.getByTestId('start-shopping')).toBeVisible();
 
-    expect(await stockOf(page, milk)).toBe(27);
+    expect(await stockOf(page, milk)).toBe(33);
     expect(await stockOf(page, oats)).toBe(12);
     expect(await stockOf(page, chives)).toBe(36);
     expect((await api(page, 'GET', '/api/items')).filter((item) => ['Yoghurt', 'Cheddar', 'Leeks', 'Rice'].includes(item.name)).map((item) => [item.name, item.stock])).toEqual(demoStocks);

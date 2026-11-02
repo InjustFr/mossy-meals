@@ -32,6 +32,7 @@
             "title": "Nothing ticked",
             "hint": "Nothing will be added to the stock. You can still add what you bought below."
         },
+        "fraction": "Part of a unit of {name}",
         "group": "Amount of {name} bought",
         "less": "Buy less {name}",
         "more": "Buy more {name}",
