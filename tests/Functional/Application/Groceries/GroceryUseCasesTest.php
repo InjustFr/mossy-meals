@@ -31,6 +31,7 @@ use App\Domain\Groceries\Exception\GroceryListAlreadyOpen;
 use App\Domain\Identity\User;
 use App\Domain\Shared\Exception\NotFound;
 use App\Domain\Stock\Exception\QuantityOutOfRange;
+use App\Domain\Stock\Kind;
 use App\Domain\Stock\Location;
 use App\Domain\Stock\Unit;
 use App\Tests\Support\ActsAsUser;
@@ -225,6 +226,16 @@ final class GroceryUseCasesTest extends KernelTestCase
         self::assertNull($this->open());
         self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::assertNull($this->open());
+    }
+
+    public function testPuttingAwayRestocksHouseholdItems(): void
+    {
+        $soap = self::getContainer()->get(AddItemHandler::class)(new AddItem('Soap', Location::Home, Unit::Piece, false, null, 1, kind: Kind::Household));
+        $this->start([$soap]);
+
+        $this->putAway([new BoughtInput($soap->id, 24)]);
+
+        self::assertSame([25], $this->stocks('Soap'));
     }
 
     public function testPuttingAwayNothingJustDiscardsTheList(): void

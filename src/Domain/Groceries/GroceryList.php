@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Groceries;
 
-use App\Domain\Cooking\Portion;
 use App\Domain\Groceries\Exception\EmptyGroceryList;
 use App\Domain\Identity\User;
 use App\Domain\Shared\Exception\NotFound;
@@ -80,14 +79,14 @@ class GroceryList
     }
 
     /**
-     * @param list<Portion> $bought
+     * @param list<Purchase> $bought
      */
     public function putAway(array $bought): void
     {
-        Portion::assertDistinct($bought);
+        Purchase::assertDistinct($bought);
 
-        foreach ($bought as $portion) {
-            $portion->ingredient->restock($portion->amount);
+        foreach ($bought as $purchase) {
+            $purchase->item->restock($purchase->amount);
         }
     }
 

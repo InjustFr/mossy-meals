@@ -6,8 +6,8 @@ namespace App\Application\Groceries\PutAwayGroceries;
 
 use App\Application\Groceries\BoughtInput;
 use App\Application\Transaction;
-use App\Domain\Cooking\Portion;
 use App\Domain\Groceries\GroceryListRepository;
+use App\Domain\Groceries\Purchase;
 use App\Domain\Stock\ItemRepository;
 use App\Domain\Stock\Quantity;
 use Symfony\Component\Uid\Ulid;
@@ -25,7 +25,7 @@ final readonly class PutAwayGroceriesHandler
     {
         $list = $this->lists->open();
         $list->putAway(array_map(
-            fn (BoughtInput $input): Portion => new Portion($this->items->get(Ulid::fromString($input->itemId)), Quantity::ofTwelfths($input->amount)),
+            fn (BoughtInput $input): Purchase => new Purchase($this->items->get(Ulid::fromString($input->itemId)), Quantity::ofTwelfths($input->amount)),
             $command->bought,
         ));
         $this->lists->remove($list);

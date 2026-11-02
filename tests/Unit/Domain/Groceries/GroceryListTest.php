@@ -6,10 +6,10 @@ namespace App\Tests\Unit\Domain\Groceries;
 
 use App\Domain\Cooking\Exception\IngredientListedTwice;
 use App\Domain\Cooking\Exception\ZeroQuantity;
-use App\Domain\Cooking\Portion;
 use App\Domain\Groceries\Exception\EmptyGroceryList;
 use App\Domain\Groceries\GroceryItem;
 use App\Domain\Groceries\GroceryList;
+use App\Domain\Groceries\Purchase;
 use App\Domain\Identity\User;
 use App\Domain\Shared\Exception\NotFound;
 use App\Domain\Stock\Exception\QuantityOutOfRange;
@@ -95,9 +95,19 @@ final class GroceryListTest extends TestCase
         $extra = self::ingredient('Chives');
         $list = new GroceryList([$milk], self::user(), new \DateTimeImmutable());
 
-        $list->putAway([new Portion($milk, Quantity::ofTwelfths(12)), new Portion($extra, Quantity::ofTwelfths(6))]);
+        $list->putAway([new Purchase($milk, Quantity::ofTwelfths(12)), new Purchase($extra, Quantity::ofTwelfths(6))]);
 
         self::assertSame([15, 6], [$milk->stock()->twelfths(), $extra->stock()->twelfths()]);
+    }
+
+    public function testPuttingAwayRestocksHouseholdItems(): void
+    {
+        $soap = Item::add('Soap', Kind::Household, Location::Home, Unit::Piece, false, null, new \DateTimeImmutable());
+        $list = new GroceryList([$soap], self::user(), new \DateTimeImmutable());
+
+        $list->putAway([new Purchase($soap, Quantity::ofTwelfths(12))]);
+
+        self::assertSame(12, $soap->stock()->twelfths());
     }
 
     public function testPuttingAwayNothingChangesNothing(): void
@@ -117,14 +127,14 @@ final class GroceryListTest extends TestCase
 
         $this->expectExceptionObject(new IngredientListedTwice('Milk'));
 
-        $list->putAway([new Portion($milk, Quantity::ofTwelfths(12)), new Portion($milk, Quantity::ofTwelfths(12))]);
+        $list->putAway([new Purchase($milk, Quantity::ofTwelfths(12)), new Purchase($milk, Quantity::ofTwelfths(12))]);
     }
 
     public function testABoughtAmountIsAboveZero(): void
     {
         $this->expectExceptionObject(new ZeroQuantity('Milk'));
 
-        new Portion(self::ingredient('Milk'), Quantity::zero());
+        new Purchase(self::ingredient('Milk'), Quantity::zero());
     }
 
     public function testPuttingAwayPastTheCeilingIsRefused(): void
@@ -134,7 +144,7 @@ final class GroceryListTest extends TestCase
 
         $this->expectExceptionObject(new QuantityOutOfRange(Quantity::MAX_UNITS));
 
-        $list->putAway([new Portion($milk, Quantity::ofTwelfths(1))]);
+        $list->putAway([new Purchase($milk, Quantity::ofTwelfths(1))]);
     }
 
     private static function ingredient(string $name, int $stock = 0): Item
