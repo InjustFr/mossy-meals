@@ -10,3 +10,4 @@ The Android app is installed outside Google Play. It shows the website itself, s
 - **AP6** A page that fails to load (network error or HTTP 500 and above) is retried after 5 seconds and reloaded when the app returns to the foreground; a crashed render process restarts the screen. — `MainActivity`
 - **AP7** The app holds nothing of its own: only the `INTERNET` permission, no backup, no stored token. — `AndroidManifest.xml`
 - **AP8** The system bars are the website's cream background with dark icons, whatever the phone's theme. The launcher icon is the favicon's cooking pot on the moss accent. — `MainActivity`, `ic_launcher.xml`
+- **AP9** While a grocery page (`/groceries`, `/groceries/put-away`) is open, the app shows over the lock screen, like a navigation app: locking the phone only turns the screen off, and waking it shows the list again without unlocking. Any other page goes back behind the lock screen. — `MainActivity`, `Hosts`

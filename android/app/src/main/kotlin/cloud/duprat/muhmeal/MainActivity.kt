@@ -3,6 +3,7 @@ package cloud.duprat.muhmeal
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.webkit.CookieManager
 import android.webkit.RenderProcessGoneDetail
@@ -109,6 +110,8 @@ class MainActivity : ComponentActivity() {
 
         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
             back.isEnabled = view.canGoBack()
+            val uri = url.toUri()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) setShowWhenLocked(hosts.showsOverLockScreen(uri.host, uri.path))
         }
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {

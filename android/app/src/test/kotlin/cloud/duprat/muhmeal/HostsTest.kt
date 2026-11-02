@@ -33,4 +33,14 @@ class HostsTest {
         assertFalse(hosts.returnedFromAccounts(null, "meals.example.com"))
         assertFalse(hosts.returnedFromAccounts("accounts.mossyleaf.studio", "accounts.mossyleaf.studio"))
     }
+
+    @Test
+    fun onlyTheGroceryPagesShowOverTheLockScreen() {
+        assertTrue(hosts.showsOverLockScreen("meals.example.com", "/groceries"))
+        assertTrue(hosts.showsOverLockScreen("meals.example.com", "/groceries/put-away"))
+        assertFalse(hosts.showsOverLockScreen("meals.example.com", "/groceries-old"))
+        assertFalse(hosts.showsOverLockScreen("meals.example.com", "/pantry"))
+        assertFalse(hosts.showsOverLockScreen("accounts.mossyleaf.studio", "/groceries"))
+        assertFalse(hosts.showsOverLockScreen("meals.example.com", null))
+    }
 }
