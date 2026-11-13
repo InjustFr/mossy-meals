@@ -10,28 +10,28 @@ class HostsTest {
     @Test
     fun theAppAndAccountsHostsStayInTheApp() {
         assertTrue(hosts.opensInApp("meals.example.com"))
-        assertTrue(hosts.opensInApp("accounts.mossyleaf.studio"))
+        assertTrue(hosts.opensInApp("accounts.duprat.cloud"))
     }
 
     @Test
     fun anyOtherHostOpensTheBrowser() {
         assertFalse(hosts.opensInApp("example.org"))
-        assertFalse(hosts.opensInApp("accounts.mossyleaf.studio.example.org"))
+        assertFalse(hosts.opensInApp("accounts.duprat.cloud.example.org"))
         assertFalse(hosts.opensInApp(null))
     }
 
     @Test
     fun anUnreadableAppAddressNeverMatchesAMissingHost() {
         assertFalse(Hosts(null).opensInApp(null))
-        assertFalse(Hosts(null).returnedFromAccounts("accounts.mossyleaf.studio", null))
+        assertFalse(Hosts(null).returnedFromAccounts("accounts.duprat.cloud", null))
     }
 
     @Test
     fun historyIsClearedOnlyWhenComingBackFromAccounts() {
-        assertTrue(hosts.returnedFromAccounts("accounts.mossyleaf.studio", "meals.example.com"))
+        assertTrue(hosts.returnedFromAccounts("accounts.duprat.cloud", "meals.example.com"))
         assertFalse(hosts.returnedFromAccounts("meals.example.com", "meals.example.com"))
         assertFalse(hosts.returnedFromAccounts(null, "meals.example.com"))
-        assertFalse(hosts.returnedFromAccounts("accounts.mossyleaf.studio", "accounts.mossyleaf.studio"))
+        assertFalse(hosts.returnedFromAccounts("accounts.duprat.cloud", "accounts.duprat.cloud"))
     }
 
     @Test
@@ -40,7 +40,7 @@ class HostsTest {
         assertTrue(hosts.showsOverLockScreen("meals.example.com", "/groceries/put-away"))
         assertFalse(hosts.showsOverLockScreen("meals.example.com", "/groceries-old"))
         assertFalse(hosts.showsOverLockScreen("meals.example.com", "/pantry"))
-        assertFalse(hosts.showsOverLockScreen("accounts.mossyleaf.studio", "/groceries"))
+        assertFalse(hosts.showsOverLockScreen("accounts.duprat.cloud", "/groceries"))
         assertFalse(hosts.showsOverLockScreen("meals.example.com", null))
     }
 }

@@ -9,7 +9,7 @@ class Hosts(private val app: String?) {
     fun returnedFromAccounts(previous: String?, host: String?) = host != null && host == app && previous == ACCOUNTS
 
     private companion object {
-        const val ACCOUNTS = "accounts.mossyleaf.studio"
+        const val ACCOUNTS = "accounts.duprat.cloud"
         const val GROCERIES = "/groceries"
     }
 }

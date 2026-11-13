@@ -7,7 +7,7 @@ The repository is public, so the app host name is never committed. It only lives
 ## Prerequisites
 
 - Docker Engine with the Compose plugin (`docker compose version`).
-- A [mossyleaf accounts](../../accounts/deploy/README.md) server (Authentik) with the `muhmeal` OIDC application: people sign in there.
+- A [duprat.cloud accounts](../../accounts/deploy/README.md) server (Authentik) with the `muhmeal` OIDC application: people sign in there.
 - A reverse proxy (Caddy, nginx, Traefik…) that terminates HTTPS and forwards to the port you choose below.
 
 ## First install
@@ -30,8 +30,8 @@ Fill `.env`:
 | `DEFAULT_URI` | Public URL, `https://<app host>` |
 | `APP_SECRET` | `openssl rand -hex 32` |
 | `POSTGRES_PASSWORD` | `openssl rand -hex 24` (`POSTGRES_DB` / `POSTGRES_USER` can stay `app`) |
-| `OIDC_CLIENT_SECRET` | Client secret of the `muhmeal` application in mossyleaf accounts (`MUHMEAL_CLIENT_SECRET` in its `.env`) |
-| `ACCOUNTS_URL` | Optional, defaults to `https://accounts.mossyleaf.studio`; the `OIDC_*_URL` endpoints derive from it (override `OIDC_TOKEN_URL`/`OIDC_USERINFO_URL` to reach Authentik through an internal URL) |
+| `OIDC_CLIENT_SECRET` | Client secret of the `muhmeal` application in duprat.cloud accounts (`MUHMEAL_CLIENT_SECRET` in its `.env`) |
+| `ACCOUNTS_URL` | Optional, defaults to `https://accounts.duprat.cloud`; the `OIDC_*_URL` endpoints derive from it (override `OIDC_TOKEN_URL`/`OIDC_USERINFO_URL` to reach Authentik through an internal URL) |
 | `LOGIN_RATE_LIMIT` | Optional, sign-in requests allowed per address every 15 minutes, 30 by default |
 
 Never change `APP_SECRET` or `POSTGRES_PASSWORD` after the first start: sessions, remember-me cookies and the database depend on them. Keep a copy of `.env` with your backups.
@@ -48,7 +48,7 @@ On every start the app waits for the database, runs pending migrations, warms th
 
 ## Accounts
 
-There is no sign-up, password or invitation in muhmeal: people sign in with their mossyleaf account. To let someone in, invite them in mossyleaf accounts with the `muhmeal` group (`make invite EMAIL=… NAME=… GROUPS=muhmeal` in `accounts`). Their first sign-in adds them to the kitchen: everyone in the group sees and edits the same pantry, recipes, groceries and history.
+There is no sign-up, password or invitation in muhmeal: people sign in with their duprat.cloud account. To let someone in, invite them in duprat.cloud accounts with the `muhmeal` group (`make invite EMAIL=… NAME=… GROUPS=muhmeal` in `accounts`). Their first sign-in adds them to the kitchen: everyone in the group sees and edits the same pantry, recipes, groceries and history.
 
 ## Reverse proxy
 

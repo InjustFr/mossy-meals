@@ -99,7 +99,7 @@ final class AuthenticationTest extends WebTestCase
         $client->request('GET', '/login/check', ['state' => $this->authorizeQuery($client)['state'], 'error' => 'access_denied']);
         $client->followRedirect();
 
-        self::assertSame('Your mossyleaf account does not have access to muhmeal yet.', Json::string(self::props($client), 'error'));
+        self::assertSame('Your duprat.cloud account does not have access to muhmeal yet.', Json::string(self::props($client), 'error'));
     }
 
     public function testAnEmailTakenByAnotherAccountIsExplained(): void
