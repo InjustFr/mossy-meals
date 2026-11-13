@@ -15,7 +15,7 @@ final class SecurityHeadersTest extends TestCase
 {
     public function testTheViteDevServerNeedsNoContentSecurityPolicy(): void
     {
-        $response = $this->respond(new SecurityHeaders('dev', 'http://localhost:8096/mossyleaf'));
+        $response = $this->respond(new SecurityHeaders('dev', 'http://localhost:8096/accounts'));
 
         self::assertFalse($response->headers->has('Content-Security-Policy'));
         self::assertSame('nosniff', $response->headers->get('X-Content-Type-Options'));
@@ -23,7 +23,7 @@ final class SecurityHeadersTest extends TestCase
 
     public function testFormsMayPostToTheAccountsOriginWithItsPort(): void
     {
-        $response = $this->respond(new SecurityHeaders('prod', 'http://localhost:8096/mossyleaf'));
+        $response = $this->respond(new SecurityHeaders('prod', 'http://localhost:8096/accounts'));
 
         self::assertStringEndsWith("form-action 'self' http://localhost:8096", (string) $response->headers->get('Content-Security-Policy'));
     }

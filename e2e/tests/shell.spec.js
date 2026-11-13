@@ -8,7 +8,7 @@ const TABS = [
     { name: 'History', path: '/history' },
 ];
 
-test('signed-out visitors sign in with their mossyleaf account and land on Cook', async ({ page }) => {
+test('signed-out visitors sign in with their duprat.cloud account and land on Cook', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/authorize\?/);
     await signInWithAccount(page, 'demo');
@@ -39,14 +39,14 @@ test('the tabs form a rail on a desktop', async ({ page }) => {
     expect(pantry.x).toBe(cook.x);
 });
 
-test('a new mossyleaf account joins the kitchen and shows in the session', async ({ page }) => {
+test('a new duprat.cloud account joins the kitchen and shows in the session', async ({ page }) => {
     const account = unique('fern').replace(' ', '-');
     await page.goto('/login');
-    await signInWithAccount(page, account, { email: `${account}@mossyleaf.test`, name: 'Fern' });
+    await signInWithAccount(page, account, { email: `${account}@example.test`, name: 'Fern' });
     await page.waitForURL('/');
     const menu = await openAccountMenu(page);
     await expect(menu).toContainText('Fern');
-    await expect(menu).toContainText(`${account}@mossyleaf.test`);
+    await expect(menu).toContainText(`${account}@example.test`);
     const session = JSON.parse(await page.locator('#app-session').textContent());
     expect(session.members.map((member) => member.name)).toEqual(expect.arrayContaining(['Demo', 'Sam', 'Fern']));
     expect(session.members.find((member) => member.name === 'Fern').id).toBe(session.userId);
@@ -79,7 +79,7 @@ test('the settings switch the language', async ({ page }) => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
 });
 
-test('signing out also signs out of the mossyleaf account', async ({ page }) => {
+test('signing out also signs out of the duprat.cloud account', async ({ page }) => {
     await signIn(page);
     const menu = await openAccountMenu(page);
     await menu.getByRole('menuitem', { name: 'Sign out' }).click();

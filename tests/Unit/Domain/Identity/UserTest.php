@@ -37,7 +37,7 @@ final class UserTest extends TestCase
         self::assertSame(str_repeat('é', 60), $user->displayName());
     }
 
-    public function testFollowsItsMossyleafAccount(): void
+    public function testFollowsItsAccount(): void
     {
         $user = $this->user();
         self::assertSame('account', $user->accountId());

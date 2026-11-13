@@ -1,17 +1,17 @@
 # muhmeal — project guide for Claude
 
-Shared kitchen manager from the MossyTrunk ecosystem. Two people share one kitchen: they track what is in the fridge, freezer and pantry, see which recipes can be cooked right now, cook them so the stock goes down, log meals that have no recipe, keep a meal history and run a grocery cycle (prepare, shop, put away).
+Shared kitchen manager. Two people share one kitchen: they track what is in the fridge, freezer and pantry, see which recipes can be cooked right now, cook them so the stock goes down, log meals that have no recipe, keep a meal history and run a grocery cycle (prepare, shop, put away).
 UI languages: **English and French**. URLs, code, commits: **English**.
 
 **Business rules live in [`docs/business/`](docs/business/README.md)** — read the relevant page before touching a domain concept, and update it in the same commit when a rule changes.
 
-Architecture and conventions mirror `~/Sites/mossyleaf-studio/mossydew` (read its `CLAUDE.md` when in doubt); deliberate differences are listed at the end of this file.
+Architecture and conventions were taken from MossyDew (`~/Sites/mossyleaf-studio/mossydew`, its `CLAUDE.md` helps when in doubt); muhmeal is no longer part of mossyleaf, and the deliberate differences are listed at the end of this file.
 
 ## Code style
 
 - **Never write comments** — no docblocks, no inline `//`/`#`, no `<!-- -->`, no `{# #}`. Only type-only PHPDoc the type system needs (`@return list<Item>`) is allowed.
 - **SOLID in every layer**: one use case per handler, one route per controller, one exception per file; extend by adding a class (a controller, an exception subclass), not by growing `switch`/`instanceof` branches; Domain and Application own their ports.
-- **Never commit the production host name**: the repository is public. Docs and examples say `<app host>` or `https://muhmeal.example.com`; the real one only lives in the server `.env`, the proxy configuration, the accounts server and the git-ignored `android/local.properties`. Before committing, `git grep` for the domain of `DEPLOY_HOST` (top of the `Makefile`, the only file that may name it): nothing else may match.
+- **Never commit the production app host**: the repository is public. Docs and examples say `<app host>` or `https://muhmeal.example.com`; the real one only lives in the server `.env`, the proxy configuration, the accounts server and the git-ignored `android/local.properties`. The `duprat.cloud` brand and its sign-in host `accounts.duprat.cloud` are public (users see them) and may be committed. Before committing, `git grep` for the app host (`muhmeal.` followed by the domain of `DEPLOY_HOST`, top of the `Makefile`): nothing may match.
 
 Generic Symfony conventions: see `AGENTS.md` (this file wins when they disagree).
 
@@ -24,7 +24,7 @@ Generic Symfony conventions: see `AGENTS.md` (this file wins when they disagree)
 ## Running things (always in Docker)
 
 ```bash
-make up              # php + database + node (Vite dev server :5176) + mock mossyleaf accounts (:8096) → http://localhost:8095
+make up              # php + database + node (Vite dev server :5176) + mock accounts (:8096) → http://localhost:8095
 make db              # create + migrate dev DB
 make fixtures        # demo accounts `demo` and `sam` (fixtures/Story)
 make migration       # doctrine:migrations:diff after mapping changes
@@ -42,7 +42,7 @@ make qa              # everything above, the gate before a commit
 |---|---|---|
 | `Domain/` | Entities (rich, **no setters**), value objects, domain services, repository **interfaces**, exceptions | nothing |
 | `Application/` | Use cases `<Context>/<UseCase>/{Command, Handler}`, views, read ports (`KitchenMembers`), ports (`CurrentUser`, `Transaction`, `SingleSignOn`) | Domain |
-| `Infrastructure/` | Doctrine repositories and read ports, security adapters (mossyleaf accounts OIDC client) | Domain, Application |
+| `Infrastructure/` | Doctrine repositories and read ports, security adapters (duprat.cloud accounts OIDC client) | Domain, Application |
 | `Presentation/` | `Api/` JSON controllers + payload DTOs, `Web/` Twig shells, auth pages and security listeners | Application, Domain |
 
 Contexts: `Identity`, `Stock` (the `Item`s the kitchen keeps, each of a `Kind`: `ingredient` or `household`, independent of its `Location` fridge / freezer / pantry / home; only ingredients enter a recipe, meal or prep and have hand tracking, buying months and variants; API `/api/items`) and `Cooking` (recipes, meals and the history, which keep the word "ingredient" for the role an item plays in them: `RecipeLine::ingredient()`, `ingredientId`; `Domain\Cooking\Planner` decides what is makeable, following variants and preps, and `Application\Cooking\RecipeViews` feeds it every prep; `Application\Stock\RemoveItem` and `EditItem` ask the Cooking `RecipeRepository` before deleting an item or making it a household item) exist, and so does `Groceries` (the one open `GroceryList` and its `GroceryItem`s, each holding an `item()` and sent as `itemId`, deleted when put away; the `Suggestion` rule says an item is suggested when it is running low and not homemade, i.e. not the output of a prep, and `Application\Stock\ItemViews` puts it on `ItemView` as `suggested` and `homemade`). `Shared` holds `Day`, `OptionalText` and the exception bases.
@@ -55,9 +55,9 @@ Contexts: `Identity`, `Stock` (the `Item`s the kitchen keeps, each of a `Kind`: 
 
 ## Accounts & security
 
-- **Sign-in = mossyleaf accounts** (Authentik at `accounts.mossyleaf.studio`, project `~/Sites/mossyleaf-studio/accounts`, shared with the other apps): no password, sign-up or invitation here. Accounts are invited in Authentik and need its `muhmeal` group. `/login` redirects there (OIDC code flow + PKCE, `OidcSingleSignOn`), `/login/check` (`AccountsAuthenticator`) exchanges the code, reads userinfo and runs `SignInHandler`: user found by `accountId` (OIDC `sub`), else a new user is created. Config: `ACCOUNTS_URL`, `OIDC_*` env vars.
+- **Sign-in = duprat.cloud accounts** (the `personal` brand of the shared Authentik, at `accounts.duprat.cloud`, project `~/Sites/mossyleaf-studio/accounts`): no password, sign-up or invitation here. Accounts are invited in Authentik and need its `muhmeal` group. `/login` redirects there (OIDC code flow + PKCE, `OidcSingleSignOn`), `/login/check` (`AccountsAuthenticator`) exchanges the code, reads userinfo and runs `SignInHandler`: user found by `accountId` (OIDC `sub`), else a new user is created. Config: `ACCOUNTS_URL`, `OIDC_*` env vars.
 - Dev and e2e use a mock OIDC server (`oidc` service, http://localhost:8096): type `demo` or `sam` (fixture accounts) or any name plus claims `{"email": "…", "name": "…"}` for a new account. PHPUnit uses `Tests\Support\FakeAccounts` (`https://accounts.test`).
-- Session firewall with the `AccountsAuthenticator`, sessions in PostgreSQL (`PdoSessionHandler`), remember-me always on (so phones stay signed in), CSRF logout that also ends the mossyleaf session. The JSON API uses the session cookie; `SameOriginGuard` rejects cross-site writes.
+- Session firewall with the `AccountsAuthenticator`, sessions in PostgreSQL (`PdoSessionHandler`), remember-me always on (so phones stay signed in), CSRF logout that also ends the accounts session. The JSON API uses the session cookie; `SameOriginGuard` rejects cross-site writes.
 - **Security headers** (`Presentation\Web\SecurityHeaders`, main requests only): a strict CSP (`default-src 'self'`, no inline script or style, no external host, `form-action` allows the accounts origin), HSTS over HTTPS, `nosniff`, `Referrer-Policy: same-origin`, `Permissions-Policy`, COOP/CORP `same-origin`, `X-Frame-Options: DENY`, `X-Robots-Tag: noindex, nofollow, noarchive`. The CSP is not sent in `dev` (Vite injects inline code). So the front end has **no inline `<script>` other than `type="application/json"` data blocks, no `style="…"` in markup or Twig, no `eval`/`new Function`, no external host**: Vue `:style` bindings (CSSOM) are fine, and Vite must not inline assets as `data:` fonts.
 - **Not discoverable**: `public/robots.txt` disallows everything, `<meta name="robots" content="noindex, nofollow">` in `templates/base.html.twig`.
 - **Rate limit**: `LoginRateLimit` limits `/login` and `/login/check` per address (`LOGIN_RATE_LIMIT`, 30 per 15 minutes) and answers 429. The e2e stack raises it.

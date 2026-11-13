@@ -16,7 +16,7 @@ final class AuthenticationTest extends WebTestCase
 {
     use ActsAsUser;
 
-    public function testSignedOutPagesSendToTheMossyleafAccount(): void
+    public function testSignedOutPagesSendToTheAccountsServer(): void
     {
         $client = self::createClient();
 
@@ -114,7 +114,7 @@ final class AuthenticationTest extends WebTestCase
         self::assertSame('An account already uses louis@example.com. Sign in instead.', Json::string(self::props($client), 'error'));
     }
 
-    public function testSigningOutAlsoSignsOutOfTheMossyleafAccount(): void
+    public function testSigningOutAlsoSignsOutOfTheAccountsServer(): void
     {
         $client = self::createClient();
         $client->request('GET', '/login');
@@ -129,7 +129,7 @@ final class AuthenticationTest extends WebTestCase
         self::assertResponseRedirects('/login');
     }
 
-    public function testSigningOutOfARememberedSessionStillEndsTheMossyleafSession(): void
+    public function testSigningOutOfARememberedSessionStillEndsTheAccountsSession(): void
     {
         $client = self::createClient();
         $client->loginUser(SecurityUser::fromUser(self::createUser()));

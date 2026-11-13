@@ -27,7 +27,7 @@ APK = android/app/build/outputs/apk/release/app-release.apk
 
 .PHONY: up down build install assets assets-e2e db db-test fixtures migration test test-unit test-functional test-js deptrac phpstan cs cs-fix audit audit-php audit-js e2e e2e-run qa ci ci-up ci-build ci-bundle ci-unbundle ci-warmup ci-checks ci-e2e image push deploy deploy-files android-sdk android-test apk apk-install
 
-up: ## Start the stack (app on http://localhost:8095, Vite on :5176, mock mossyleaf accounts on :8096)
+up: ## Start the stack (app on http://localhost:8095, Vite on :5176, mock accounts on :8096)
 	$(DC) up -d --wait php database node oidc
 
 down:
